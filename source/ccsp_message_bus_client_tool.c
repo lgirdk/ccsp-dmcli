@@ -45,6 +45,7 @@
 #include "ccsp_memory.h"
 #include <ccsp_custom.h>
 #include <dslh_definitions_database.h>
+#include <sys/ucontext.h>
 
 // for PC build with gcc 4.4.3 on Ubuntu 10.4 Lucid,
 // <asm/sigcontext.h> will redefine some definitions from <bits/sigcontext.h>
@@ -250,6 +251,7 @@ RETURN_VALUE_TO_STRING retValueToString[] =
 static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
 {
     int fd1;
+    ucontext_t *ctx = (ucontext_t *)context;
     pid_t pid = getpid();
     char mapsFile[32]     = {0};
     char cmdFile[32]      = {0};
