@@ -63,6 +63,8 @@ char   dst_pathname_cr[64] =  {0};
 char subsystem_prefix[32] = "";
 
 #define MAX_PARAM 20000
+#define DMCLI_STRLEN_MAX 1024
+
 struct param_rtt
 {
   char *param_name;
@@ -78,7 +80,7 @@ typedef struct _RETURN_VALUE_TO_STRING_
 
 struct param_rtt * rtt_result = NULL;
 int rtt_ct = 0;
-char            cmdLine[1024]  = {0};
+char            cmdLine[DMCLI_STRLEN_MAX]  = {0};
 int             runSteps = __LINE__;
 
 int 
@@ -2023,6 +2025,14 @@ int main(int argc, char *argv[])
     idx = 1;
 
     runSteps = __LINE__;
+
+    // save command line
+    for(i=0; i<(argc-1) && (strlen(argv[i])+strlen(cmdLine)+2)<=DMCLI_STRLEN_MAX; i++) {
+        strcat(cmdLine, argv[i]);
+        strcat(cmdLine, " ");
+    }
+    if(i == argc-1 && (strlen(argv[i])+strlen(cmdLine)+1)<=DMCLI_STRLEN_MAX)
+        strcat(cmdLine, argv[argc-1]);
 
     if ( TRUE )    
     {
