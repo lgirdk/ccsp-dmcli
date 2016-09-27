@@ -756,14 +756,21 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
                    */
                 if ( size2 == 0 )
                 {
-                printf(color_error"Can't find destination component.\n"color_end);
+			printf(color_error"Can't find destination component.\n"color_end);
                     return 1;
                 }
             }
             else
             {
-            printf(color_error"Can't find destination component.\n"color_end);
-                return 1;
+               if((ret == CCSP_MESSAGE_BUS_NOT_EXIST)||(ret == CCSP_CR_ERR_UNSUPPORTED_NAMESPACE))
+               {
+                  printf(color_error"Can't find destination component.\n"color_end);
+               }
+               else
+               {
+                  printf(color_error"Ccsp msg bus internal error %d \n"color_end,ret);
+               }
+               return 1;
             }     
 
             gettimeofday(&end, NULL);
