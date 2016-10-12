@@ -111,6 +111,7 @@ void free_rtt_result()
 
 #define BUSCLIENT_MAX_COUNT_SUPPORTED 20
 #define MAX_CMD_ARG_NUM               20*3+2
+#define MAX_COMP_NAME_OR_ID_LEN       64
 
 typedef struct 
 {
@@ -697,9 +698,9 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
     int i = 0;
     int index  = 0;
     char * pTmp = NULL;
-    char * parameterNames[20];
-    parameterValStruct_t val[20] = {{0}};
-    parameterAttributeStruct_t valAttr[20] = {{0}};
+    char * parameterNames[BUSCLIENT_MAX_COUNT_SUPPORTED] = {NULL}; /*RDKB-7436, CID-33429, init before use */
+    parameterValStruct_t val[BUSCLIENT_MAX_COUNT_SUPPORTED] = {{0}};
+    parameterAttributeStruct_t valAttr[BUSCLIENT_MAX_COUNT_SUPPORTED] = {{0}};
     parameterAttributeStruct_t ** parameterAttr = NULL;
     componentStruct_t ** ppComponents = NULL;
 	int ct ;
@@ -713,8 +714,8 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
     char *                          dst_componentid         =  NULL;
     char *                          dst_pathname            =  NULL;
 
-    static char                     PsmComponentId[64]      = {0};
-    static char                     PsmComponentPath[64]    = {0};
+    static char                     PsmComponentId[MAX_COMP_NAME_OR_ID_LEN]      = {0};
+    static char                     PsmComponentPath[MAX_COMP_NAME_OR_ID_LEN]    = {0};
     
     //CCSP_Msg_SleepInMilliSeconds(500);
 
@@ -880,7 +881,7 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
             runSteps = __LINE__;
         
             i = 0;
-            while ( pInputCmd->result[i].pathname && (i < BUSCLIENT_MAX_COUNT_SUPPORTED) )
+            while ( pInputCmd->result[i].pathname && (i < (BUSCLIENT_MAX_COUNT_SUPPORTED-1)) ) /*RDKB-7436, CID-33004, Limiting Out of bound access*/
             {           
                 val[i].parameterName  = AnscCloneString(pInputCmd->result[i].pathname);
 
@@ -1675,6 +1676,10 @@ int analyse_cmd(char **args, PCMD_CONTENT pInputCmd)
             }
 
             pType = *args++;
+            if(!pType)/*RDKB-7436, CID-33340, null check before use*/
+            {
+                goto EXIT1;
+            }
             if ( strcmp( pType, "string"   )  &&
                  strcmp( pType, "int"      )  &&
                  strcmp( pType, "uint"     )  &&
