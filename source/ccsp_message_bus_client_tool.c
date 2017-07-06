@@ -2063,7 +2063,11 @@ int main(int argc, char *argv[])
         if ( strcmp(argv[idx], "simu" ) != 0 )
         {
 
-            strcpy(dst_pathname_cr, argv[idx]);
+            if (strlen(argv[idx]) > (sizeof(dst_pathname_cr)-1))
+            {
+                fprintf( stderr, "\nargv[idx] size is greater than destination!");
+            }
+            strncpy(dst_pathname_cr, argv[idx], sizeof(dst_pathname_cr)-1);
 
             iLen = strlen(dst_pathname_cr);
 
@@ -2073,7 +2077,11 @@ int main(int argc, char *argv[])
                 dst_pathname_cr[iLen + 1]   = 0;
             }
             
-            strcpy(subsystem_prefix, dst_pathname_cr);
+            if (strlen(dst_pathname_cr) > (sizeof(subsystem_prefix)-1))
+            {
+                fprintf( stderr, "\n dst_pathname_cr size is greater than destination!");
+            }
+            strncpy(subsystem_prefix, dst_pathname_cr, sizeof(subsystem_prefix)-1);
         }
         
         strcat(dst_pathname_cr, CCSP_DBUS_INTERFACE_CR);
