@@ -2004,6 +2004,14 @@ int main(int argc, char *argv[])
     BOOL            bInteractive     = FALSE;
     char            **args           = NULL;
 
+    /*
+       Set stdout to unbuffered mode as this app needs to generate terminal
+       output which is not always line based (e.g. the "dmcli>" prompt) and
+       therefore does not always work as expected if stdout is left in the
+       default line buffered mode.
+    */
+    setbuf(stdout, NULL);
+
     if ( argc < 2 )
     {
         PRINT_HELP(argv[0]);
