@@ -16,45 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-#                                              -*- Autoconf -*-
-# Process this file with autoconf to produce configure script.
-#
+AM_CFLAGS = -D_ANSC_LINUX
+AM_CFLAGS += -D_ANSC_USER
+AM_CFLAGS += -D_ANSC_LITTLE_ENDIAN_
+AM_CFLAGS += -DCCSP_INC_no_asm_sigcontext_h
+AM_LDFLAGS = -lccsp_common
 
-AC_PREREQ([2.65])
-AC_INIT([CcspDmCli], [1.0], [BUG-REPORT-ADDRESS])
-AM_INIT_AUTOMAKE
-LT_INIT
-
-AC_PREFIX_DEFAULT(`pwd`)
-AC_ENABLE_SHARED
-AC_DISABLE_STATIC
-
-AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_MACRO_DIR([m4])
-
-# Checks for programs.
-AC_PROG_CC
-AC_PROG_INSTALL
-AM_PROG_CC_C_O
-AM_PROG_LIBTOOL(libtool)
-
-# Checks for header files.
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
-AC_C_INLINE
-
-# Checks for library functions.
-AC_FUNC_MALLOC
-
-AC_CONFIG_FILES(
-	source/Makefile
-	source/MsgBusTestServer/Makefile
-	source/MsgBusTestClient/Makefile
-	Makefile
-)
-
-
-AC_OUTPUT
-
+AM_CPPFLAGS = -Wall -Werror
+ACLOCAL_AMFLAGS = -I m4
+hardware_platform = i686-linux-gnu
+bin_PROGRAMS = MsgBusTestClient
+MsgBusTestClient_CPPFLAGS = -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include $(CPPFLAGS)
+MsgBusTestClient_SOURCES = MsgBusTestClientApp.c
+MsgBusTestClient_LDFLAGS =  -lccsp_common

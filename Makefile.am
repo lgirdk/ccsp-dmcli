@@ -17,3 +17,5 @@
 # limitations under the License.
 ##########################################################################
 SUBDIRS = source
+SUBDIRS += source/MsgBusTestServer
+SUBDIRS += source/MsgBusTestClient
