@@ -46,6 +46,7 @@
 #include <ccsp_custom.h>
 #include <dslh_definitions_database.h>
 #include <sys/ucontext.h>
+#include "ansc_platform.h"
 
 // for PC build with gcc 4.4.3 on Ubuntu 10.4 Lucid,
 // <asm/sigcontext.h> will redefine some definitions from <bits/sigcontext.h>
@@ -53,13 +54,39 @@
     #include <asm/sigcontext.h>
 #endif
 
+#ifndef SAFEC_DUMMY_API
+#include "safe_str_lib.h"
+#endif
+
 #define CCSP_MESSAGE_BUS_TEST
+
+#define RDK_SAFECLIB_ERR(func)  printf("safeclib error at %s %s:%d %s", __FILE__, __FUNCTION__, __LINE__, func)
+
+#ifdef SAFEC_DUMMY_API
+typedef int errno_t;
+#define EOK 0
+errno_t strcmp_s(const char *,int,const char *,int *);
+
+#define strcpy_s(dst,max,src) EOK; \
+ strcpy(dst,src);
+#define strncpy_s(dst,max,src,len)  EOK; \
+ strncpy(dst,src,len);
+#define strcat_s(dst,max,src) EOK; \
+ strcat(dst,src);
+
+//adding strcmp_s defination
+errno_t strcmp_s(const char * d,int max ,const char * src,int *r)
+{
+  *r= strcmp(d,src);
+  return EOK;
+}
+#endif
 
 #ifdef CCSP_MESSAGE_BUS_TEST
 
 void *bus_handle = NULL;
 
-char   dst_pathname_cr[64] =  {0};
+char dst_pathname_cr[64] =  {0};
 char subsystem_prefix[32] = "";
 
 #define MAX_PARAM 20000
@@ -110,6 +137,28 @@ void free_rtt_result()
 #define BUSCLIENT_MAX_COUNT_SUPPORTED 20
 #define MAX_CMD_ARG_NUM               20*3+2
 #define MAX_COMP_NAME_OR_ID_LEN       64
+
+#define NUM_CCSP_TYPES (sizeof(ccsp_type_table)/sizeof(ccsp_type_table[0]))
+
+typedef struct ccsp_pair {
+  char              *name;
+  enum dataType_e   type;
+} CCSP_PAIR;
+
+CCSP_PAIR ccsp_type_table[] = {
+  { "string",   ccsp_string },
+  { "int",      ccsp_int },
+  { "uint",     ccsp_unsignedInt },
+  { "bool",     ccsp_boolean },
+  { "dateTime", ccsp_dateTime },
+  { "base64",   ccsp_base64 },
+  { "long",     ccsp_long },
+  { "ulong",    ccsp_unsignedLong },
+  { "float",    ccsp_float },
+  { "double",   ccsp_double },
+  { "byte",     ccsp_byte },
+  { "none",     ccsp_none}
+};
 
 typedef struct 
 {
@@ -249,6 +298,25 @@ RETURN_VALUE_TO_STRING retValueToString[] =
     {NULL, 0}
 };
 
+int ccsp_type_from_name(char *name, enum dataType_e *type_ptr)
+{
+  errno_t rc = -1;
+  int ind = -1;
+  int i = 0;
+  if(name == NULL)
+     return 0;
+  for (i = 0 ; i < NUM_CCSP_TYPES ; ++i)
+  {
+      rc = strcmp_s(name, strlen(name), ccsp_type_table[i].name, &ind);
+      if((rc == EOK) && (!ind))
+      {
+          *type_ptr = ccsp_type_table[i].type;
+          return 1;
+      }
+  }
+  return 0;
+}
+
 static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
 {
     int fd1;
@@ -356,6 +424,8 @@ path_message_func (DBusConnection  *conn,
     char *from = 0;
     char *req = 0;
     char * err_msg  = DBUS_ERROR_NOT_SUPPORTED;
+    errno_t rc1 = -1, rc2 = -1;
+    int ind1 = -1, ind2 = -1;
 
     reply = dbus_message_new_method_return (message);
     if (reply == NULL)
@@ -363,7 +433,13 @@ path_message_func (DBusConnection  *conn,
         return DBUS_HANDLER_RESULT_HANDLED;
     }
 
-    if(!strcmp("org.freedesktop.DBus.Introspectable", interface)  && !strcmp(method, "Introspect"))
+    rc1 = strcmp_s("org.freedesktop.DBus.Introspectable", strlen("org.freedesktop.DBus.Introspectable"), interface, &ind1);
+    rc2 = strcmp_s("Introspect", strlen("Introspect"), method, &ind2);
+    if((rc1 != EOK) || (rc2 != EOK))
+    {
+        RDK_SAFECLIB_ERR("strcmp_s");
+    }
+    if(((rc1 == EOK) && !(ind1)) && ((rc2 == EOK) && !(ind2)))
     {
         printf("Received method Introspect...\n");
 
@@ -378,9 +454,14 @@ path_message_func (DBusConnection  *conn,
 
     }
 
-
 //    printf("dbus_message_is_method_call %d\n", UserGetTickInMilliSeconds2());
-    if (!strcmp(msg_interface, interface) && !strcmp(method, msg_method))
+    rc1 = strcmp_s(msg_interface, strlen(msg_interface), interface, &ind1);
+    rc2 = strcmp_s(msg_method, strlen(msg_method), method, &ind2);
+    if((rc1 != EOK) || ( rc2 != EOK))
+    {
+        RDK_SAFECLIB_ERR("strcmp_s");
+    }
+    if(((rc1 == EOK) && !(ind1)) && ((rc2 == EOK) && !(ind2)))
     {
         printf("Received method %s...\n", method);
 
@@ -400,7 +481,6 @@ path_message_func (DBusConnection  *conn,
 
         return DBUS_HANDLER_RESULT_HANDLED;
     }
-
 
     dbus_message_set_error_name (reply, err_msg) ;
     dbus_connection_send (conn, reply, NULL);
@@ -489,6 +569,7 @@ int  CCSP_Message_Bus_Send
     DBusMessage *reply;
     int ret = CCSP_Message_Bus_ERROR;
     char * res = 0;
+    errno_t rc = -1;
 
     message = dbus_message_new_method_call (component_id,
                                             path,
@@ -518,7 +599,11 @@ int  CCSP_Message_Bus_Send
             *response = AnscAllocateMemory(strlen(res)+1);;
             if(*response)
             {
-                strcpy(*response, res);
+                rc = strcpy_s(*response, strlen(res)+1, res);
+                if(rc != EOK)
+                {
+                    RDK_SAFECLIB_ERR("strcpy_s");
+                }
                 ret = CCSP_Message_Bus_OK;
             }
 
@@ -609,6 +694,8 @@ test_Send_Thread
     int count = 1;
     int errcount = 0;
     int ret ;
+    int ind      = -1;
+    errno_t rc   = -1;
 
 
     while(1)
@@ -714,6 +801,8 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
 
     static char                     PsmComponentId[MAX_COMP_NAME_OR_ID_LEN]      = {0};
     static char                     PsmComponentPath[MAX_COMP_NAME_OR_ID_LEN]    = {0};
+    errno_t rc  = -1;
+    int     ind = -1;
     
     //CCSP_Msg_SleepInMilliSeconds(500);
 
@@ -797,18 +886,41 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
             {
                 if ( _ansc_strlen(subsystem_prefix) != 0 )
                 {
-                    _ansc_strcpy(PsmComponentId,    subsystem_prefix);
-                    _ansc_strcat(PsmComponentId,    "com.cisco.spvtg.ccsp.psm");
-
-                    _ansc_strcpy(PsmComponentPath, subsystem_prefix);
+                    rc = strcpy_s(PsmComponentId, MAX_COMP_NAME_OR_ID_LEN, subsystem_prefix);
+                    if(rc != EOK)
+                    {
+                        RDK_SAFECLIB_ERR("strcpy_s");
+                    }
+                    rc = strcat_s(PsmComponentId, MAX_COMP_NAME_OR_ID_LEN, "com.cisco.spvtg.ccsp.psm");
+                    if(rc != EOK)
+                    {
+                        RDK_SAFECLIB_ERR("strcat_s");
+                    }
+                    rc = strcpy_s(PsmComponentPath, MAX_COMP_NAME_OR_ID_LEN, subsystem_prefix);
+                    if(rc != EOK)
+                    {
+                        RDK_SAFECLIB_ERR("strcpy_s");
+                    }
                     /* Remove the "." */
                     PsmComponentPath[_ansc_strlen(PsmComponentPath) - 1] = '\0';
-                    _ansc_strcat(PsmComponentPath,  "com/cisco/spvtg/ccsp/psm");
+                    rc = strcat_s(PsmComponentPath, MAX_COMP_NAME_OR_ID_LEN, "com/cisco/spvtg/ccsp/psm");
+                    if(rc != EOK)
+                    {
+                        RDK_SAFECLIB_ERR("strcat_s");
+                    }
                 }
                 else
                 {
-                    _ansc_strcpy(PsmComponentId,   "com.cisco.spvtg.ccsp.psm");
-                    _ansc_strcpy(PsmComponentPath, "com/cisco/spvtg/ccsp/psm");
+                    rc = strcpy_s(PsmComponentId, MAX_COMP_NAME_OR_ID_LEN, "com.cisco.spvtg.ccsp.psm");
+                    if(rc != EOK)
+                    {
+                        RDK_SAFECLIB_ERR("strcpy_s");
+                    }
+                    rc = strcpy_s(PsmComponentPath, MAX_COMP_NAME_OR_ID_LEN, "com/cisco/spvtg/ccsp/psm");
+                    if(rc != EOK)
+                    {
+                        RDK_SAFECLIB_ERR("strcpy_s");
+                    }
                 }
 
                 dst_componentid = PsmComponentId;
@@ -891,61 +1003,44 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
                 val[i].parameterName  = AnscCloneString(pInputCmd->result[i].pathname);
 
                 runSteps = __LINE__;
+                rc = strcmp_s("void", strlen("void"), pInputCmd->result[i].val2, &ind);
+                if(rc != EOK)
+                {
+                    RDK_SAFECLIB_ERR("strcmp_s");
+                }
 
-                if ( !strcmp(pInputCmd->result[i].val2, "void") )
+                if ((rc == EOK) && (!ind))
                     val[i].parameterValue = NULL;
                 else
                     val[i].parameterValue = AnscCloneString(pInputCmd->result[i].val2);
 
-                if ( !strcmp( pInputCmd->result[i].val1, "string") )
+                if (! ccsp_type_from_name(pInputCmd->result[i].val1, &val[i].type))
                 {
-                    val[i].type = ccsp_string;
+                    printf("unrecognized type name: %s", pInputCmd->result[i].val1);
+                    return 0;
                 }
-                else if ( !strcmp( pInputCmd->result[i].val1, "int") )
-                {
-                    val[i].type = ccsp_int;
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "uint") )
-                {
-                    val[i].type = ccsp_unsignedInt;
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "bool") )
-                {
-                    val[i].type = ccsp_boolean;
 
+                if(val[i].type == ccsp_boolean)
+                {
                     /* support true/false or 1/0 here.*/
-                    if ( !strcmp(val[i].parameterValue, "1"))
-                        val[i].parameterValue = AnscCloneString("true");
-                    else if ( !strcmp(val[i].parameterValue, "0"))
-                        val[i].parameterValue = AnscCloneString("false");
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "dateTime") )
-                {
-                    val[i].type = ccsp_dateTime;
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "base64") )
-                {
-                    val[i].type = ccsp_base64;
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "long") )
-                {
-                    val[i].type = ccsp_long;
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "unlong") )
-                {
-                    val[i].type = ccsp_unsignedLong;
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "float") )
-                {
-                    val[i].type = ccsp_float;
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "double") )
-                {
-                    val[i].type = ccsp_double;
-                }
-                else if ( !strcmp( pInputCmd->result[i].val1, "byte") )
-                {
-                    val[i].type = ccsp_byte;
+                    if ( !(rc = strcmp_s("1", strlen("1"), val[i].parameterValue, &ind)) )
+                    {
+                         if(!(ind))
+                         {
+                              val[i].parameterValue = AnscCloneString("true");
+                         }
+                    }
+                    else if ( !(rc = strcmp_s("0", strlen("0"), val[i].parameterValue, &ind)) )
+                    {
+                         if(!ind)
+                         {
+                              val[i].parameterValue = AnscCloneString("false");
+                         }
+                    }
+                    else if(rc != EOK)
+                    {
+                         RDK_SAFECLIB_ERR("strcmp_s");
+                    }
                 }
 
                 runSteps = __LINE__;
@@ -1005,60 +1100,43 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
         {
             val[0].parameterName  = AnscCloneString(pInputCmd->result[0].pathname);
 
-            if ( !strcmp(pInputCmd->result[0].val2, "void") )
+            rc = strcmp_s("void", strlen("void"), pInputCmd->result[0].val2, &ind);
+            if(rc != EOK)
+            {
+                 RDK_SAFECLIB_ERR("strcmp_s");
+            }
+            if ((rc == EOK) && (!ind))
                 val[0].parameterValue = NULL;
             else
                 val[0].parameterValue = AnscCloneString(pInputCmd->result[0].val2);
 
-            if ( !strcmp( pInputCmd->result[0].val1, "string") )
+            if (! ccsp_type_from_name(pInputCmd->result[0].val1, &val[0].type))
             {
-                val[0].type = ccsp_string;
+                printf("unrecognized type name: %s", pInputCmd->result[0].val1);
+                return 0;
             }
-            else if ( !strcmp( pInputCmd->result[0].val1, "int") )
-            {
-                val[0].type = ccsp_int;
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "uint") )
-            {
-                val[0].type = ccsp_unsignedInt;
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "bool") )
-            {
-                val[0].type = ccsp_boolean;
 
-                /* support true/false or 1/0 here.*/
-                if ( !strcmp(val[0].parameterValue, "1"))
-                    val[i].parameterValue = AnscCloneString("true");
-                else if ( !strcmp(val[0].parameterValue, "0"))
-                    val[i].parameterValue = AnscCloneString("false");
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "dateTime") )
+            if(val[0].type == ccsp_boolean)
             {
-                val[0].type = ccsp_dateTime;
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "base64") )
-            {
-                val[0].type = ccsp_base64;
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "long") )
-            {
-                val[0].type = ccsp_long;
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "unlong") )
-            {
-                val[0].type = ccsp_unsignedLong;
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "float") )
-            {
-                val[0].type = ccsp_float;
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "double") )
-            {
-                val[0].type = ccsp_double;
-            }
-            else if ( !strcmp( pInputCmd->result[0].val1, "byte") )
-            {
-                val[0].type = ccsp_byte;
+                  /* support true/false or 1/0 here.*/
+                  if ( !(rc = strcmp_s("1", strlen("1"), val[0].parameterValue, &ind)) )
+                  {
+                       if(!(ind))
+                       {
+                            val[i].parameterValue = AnscCloneString("true");
+                       }
+                  }
+                  else if ( !(rc = strcmp_s("0", strlen("0"), val[0].parameterValue, &ind)) )
+                  {
+                       if(!ind)
+                       {
+                            val[i].parameterValue = AnscCloneString("false");
+                       }
+                  }
+                  else if(rc != EOK)
+                  {
+                       RDK_SAFECLIB_ERR("strcmp_s");
+                  }
             }
 
             ret = PSM_Set_Record_Value2(
@@ -1402,7 +1480,7 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
                 total_mtime = 0;
                 for ( i = 0; i < size; i++ )
                 {
-                    if(strcmp(parameterVal[i]->parameterName,"") )
+                    if(parameterVal[i]->parameterName[0])
                     {
                         char * mparameterNames[2];
                         int msize;
@@ -1622,14 +1700,23 @@ int analyse_cmd(char **args, PCMD_CONTENT pInputCmd)
     char * pAccesslist = NULL;
     char * pNextlevel = NULL;
     int    index   = 0;
-	
+    errno_t rc = -1;
+    int ind = -1;
+    int i = 0;
+    int validDataType = 0;
+    char datatype[][9] = {"string","int","uint","dateTime","base64","float","double","bool","byte"};
+
 	//zqiu: fix crash when *args is NULL
 	if ( *args == NULL )
 		goto EXIT1;
     if ( strncmp( *args, "setsub", 6 ) == 0 )
     {
          if(*(args+1) != NULL)
-             strncpy(subsystem_prefix, *(args+1), sizeof(subsystem_prefix));
+         rc = strncpy_s(subsystem_prefix, sizeof(subsystem_prefix), *(args+1), strlen(*(args+1)));
+         if(rc != EOK)
+         {
+             RDK_SAFECLIB_ERR("strncpy_s");
+         }
          printf("subsystem_prefix %s\n", subsystem_prefix);
          return -3;
     }
@@ -1685,19 +1772,22 @@ int analyse_cmd(char **args, PCMD_CONTENT pInputCmd)
             {
                 goto EXIT1;
             }
-            if ( strcmp( pType, "string"   )  &&
-                 strcmp( pType, "int"      )  &&
-                 strcmp( pType, "uint"     )  &&
-                 strcmp( pType, "dateTime" )  &&
-                 strcmp( pType, "base64"   )  &&
-                 strcmp( pType, "float"    )  &&
-                 strcmp( pType, "double"   )  &&
-                 strcmp( pType, "bool"   )  &&
-                 strcmp( pType, "byte"     )
-               )
+            for(i=0; i<9; i++)
             {
+                 rc =strcmp_s(datatype[i], strlen(datatype[i]), pType, &ind);
+                 if(rc != EOK)
+                 {
+                      RDK_SAFECLIB_ERR("strcmp_s");
+                 }
+
+                 if((rc == EOK) && (!ind))
+                 {
+                    validDataType=1;
+                    break;
+                 }
+              }
+              if(!validDataType)  /* not matching to any data type */
                 goto EXIT1;
-            }
 
             runSteps = __LINE__;
 
@@ -2003,6 +2093,10 @@ int main(int argc, char *argv[])
     int             idx              = 0;
     BOOL            bInteractive     = FALSE;
     char            **args           = NULL;
+    errno_t         rc               = -1;
+    int             ind              = -1;
+    int             validArg         = 0;
+    char            param[][5]       = {"eRT","eMG","eEP","simu"};
 
     /*
        Set stdout to unbuffered mode as this app needs to generate terminal
@@ -2048,24 +2142,38 @@ int main(int argc, char *argv[])
     {
         int                         iLen    = 0;
 
-        if ( ( strcmp(argv[idx], "eRT" ) != 0) &&
-             ( strcmp(argv[idx], "eMG" ) != 0) &&
-             ( strcmp(argv[idx], "eEP" ) != 0) &&
-             ( strcmp(argv[idx], "simu" ) != 0 ))
+        for (i=0; i<4; i++)
+        {
+           rc = strcmp_s(param[i],strlen(param[i]), argv[idx],&ind);
+           if(rc != EOK)
+           {
+               RDK_SAFECLIB_ERR("strcmp_s");
+           }
+
+           if((rc == EOK) && (!ind))
+           {
+               validArg = 1;
+               break;
+           }
+        }
+        if(!validArg)  /* not matching to Valid Arguments */
         {
             PRINT_HELP(argv[0]);
             
             return 0;
         }
-
-        if ( strcmp(argv[idx], "simu" ) != 0 )
+        rc = strcmp_s("simu",  strlen("simu"),  argv[idx], &ind );
+        if(rc != EOK)
         {
-
-            if (strlen(argv[idx]) > (sizeof(dst_pathname_cr)-1))
+            RDK_SAFECLIB_ERR("strcmp_s");
+        }
+        if((rc == EOK) && (ind != 0))
+        {
+            rc = strncpy_s(dst_pathname_cr,  sizeof(dst_pathname_cr), argv[idx], strlen(argv[idx]));
+            if(rc != EOK)
             {
-                fprintf( stderr, "\nargv[idx] size is greater than destination!");
+                 RDK_SAFECLIB_ERR("strncpy_s");
             }
-            strncpy(dst_pathname_cr, argv[idx], sizeof(dst_pathname_cr)-1);
 
             iLen = strlen(dst_pathname_cr);
 
@@ -2075,14 +2183,17 @@ int main(int argc, char *argv[])
                 dst_pathname_cr[iLen + 1]   = 0;
             }
             
-            if (strlen(dst_pathname_cr) > (sizeof(subsystem_prefix)-1))
+            rc = strncpy_s(subsystem_prefix,  sizeof(subsystem_prefix), dst_pathname_cr, strlen(dst_pathname_cr));
+            if(rc != EOK)
             {
-                fprintf( stderr, "\n dst_pathname_cr size is greater than destination!");
+                RDK_SAFECLIB_ERR("strncpy_s");
             }
-            strncpy(subsystem_prefix, dst_pathname_cr, sizeof(subsystem_prefix)-1);
         }
-        
-        strcat(dst_pathname_cr, CCSP_DBUS_INTERFACE_CR);
+        rc = strcat_s(dst_pathname_cr,  sizeof(dst_pathname_cr), CCSP_DBUS_INTERFACE_CR);
+        if(rc != EOK)
+        {
+            RDK_SAFECLIB_ERR("strcat_s");
+        }
         
         printf(color_succeed"CR component name is: %s\n", dst_pathname_cr);
 
