@@ -29,6 +29,6 @@ hardware_platform = i686-linux-gnu
 
 bin_PROGRAMS = MsgBusTestServer
 MsgBusTestServer_CPPFLAGS = -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include $(CPPFLAGS)
-MsgBusTestServer_SOURCES = ssp_main.c cosa_MsgBusTest_dml.c plugin_main.c ssp_action.c ssp_messagebus_interface.c 
+MsgBusTestServer_SOURCES = ssp_main.c cosa_MsgBusTest_dml.c plugin_main.c ssp_action.c ssp_messagebus_interface.c  dm_pack_datamodel.c 
 MsgBusTestServer_LDFLAGS =  -lccsp_common
 
