@@ -42,17 +42,10 @@
 
     -------------------------------------------------------------------
 
-    copyright:
-
-        Cisco Systems, Inc.
-        All Rights Reserved.
-
-    -------------------------------------------------------------------
-
     description:
 
         This file implementes back-end apis for the 
-		COSA Data Model Library - Hotspot Component	
+		COSA Data Model Library - MsgBusTestServer Component	
     -------------------------------------------------------------------
 
     environment:
@@ -63,13 +56,13 @@
 
     author:
 
-        Raghavendra Kammara
+        Rajmohan Thangarajan
 
     -------------------------------------------------------------------
 
     revision:
 
-        01/14/2011    initial revision.
+        Sep 5, 2018    initial revision.
 
 **************************************************************************/
 
