@@ -25,13 +25,6 @@
 
     ---------------------------------------------------------------
 
-    copyright:
-
-        Cisco Systems, Inc.
-        All Rights Reserved.
-
-    ---------------------------------------------------------------
-
     description:
 
         This header file defines the exported apis for COSA Library plugin.
@@ -46,13 +39,13 @@
 
     author:
 
-        Bin Zhu
+        Rajmohan Thangarajan
 
     ---------------------------------------------------------------
 
     revision:
 
-        12/12/2010    initial revision.
+        Sep 5, 2018    initial revision.
 
 **********************************************************************/
 
