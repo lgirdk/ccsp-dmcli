@@ -48,6 +48,9 @@
 #include <sys/ucontext.h>
 #include "ansc_platform.h"
 
+// TELEMETRY 2.0 //RDKB-25996
+#include <telemetry_busmessage_sender.h>
+
 // for PC build with gcc 4.4.3 on Ubuntu 10.4 Lucid,
 // <asm/sigcontext.h> will redefine some definitions from <bits/sigcontext.h>
 #if !defined(CCSP_INC_no_asm_sigcontext_h)
@@ -811,6 +814,7 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
     errno_t rc  = -1;
     int     ind = -1;
     
+   
     //CCSP_Msg_SleepInMilliSeconds(500);
 
     runSteps = __LINE__;
@@ -863,7 +867,15 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
                else
                {
                   printf(color_error"Ccsp msg bus internal error %d \n"color_end,ret);
-               }
+	          if(strncmp(ret, CCSP_ERR_NOT_CONNECT, strlen(ret)) == 0)
+	          {
+	             t2_event_d("SYS_ERROR_CCSPBus_error190", 1);	
+	          }
+	          else if(strncmp(ret, CCSP_ERR_TIMEOUT, strlen(ret)) == 0)
+	          {
+	             t2_event_d("SYS_ERROR_CCSPBus_error191", 1);
+	          }
+	       }
                return 1;
             }     
 
