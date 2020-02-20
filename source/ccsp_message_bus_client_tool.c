@@ -378,9 +378,10 @@ static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
 
         /* Read the maps file */
         fprintf(stderr, "\n/proc/%d/maps:\n", pid);
-        while( ( readBytes = read( fd1, buf, 510 ) ) > 0 )
+        while( ( readBytes = read( fd1, buf, sizeof(buf) ) ) > 0 )
         {
-            fprintf( stderr, buf );
+            /* Coverity Issue Fix - CID:67949 : Non Constant PrintFormat */
+            fprintf( stderr,"%s", buf );
             memset(buf, 0, sizeof(buf));
         }
 
@@ -693,9 +694,7 @@ test_Send_Thread
     int argc = pdata->argc;
     int count = 1;
     int errcount = 0;
-    int ret ;
-    int ind      = -1;
-    errno_t rc   = -1;
+    int ret,mod = 0;
 
 
     while(1)
@@ -706,8 +705,15 @@ test_Send_Thread
 
 ///*
             ret = CCSP_Message_Bus_Send(bus_handle,argv[2],msg_path, msg_interface, msg_method ,"88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888", &resp ,5);
+           /* Coverity Issue Fix - CID:57209 : Divide By Zero */
+	   mod = atoi(argv[3]);
+           if (mod == 0) 
+	   {	
+        	printf("count cannot be zero\n");
+        	return -1;
+    	   } 		
 
-            if( (count % atoi(argv[3])) == 0)
+	    if( ( count % mod ) == 0)
             {
                 printf("count 2 %d  errcount %d\n", count, errcount);
                 //                sleep(1);
@@ -790,9 +796,10 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
     componentStruct_t ** ppComponents = NULL;
 	int ct ;
 	long total = 0;
-    unsigned int psmType;
-    char *psmValue;
-    char *psmName;
+    /* Coverity Issue Fix - CID:110565,110596  : UnInitialised Variable*/
+    unsigned int psmType = 0;
+    char *psmValue = NULL;
+    char *psmName  = NULL ;
     struct timeval start, end;
     long mtime, mtime_onetime, seconds, useconds, total_mtime;    
 
@@ -937,6 +944,12 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
         printf(color_parametername"%s from/to component(%s): %s\n", pInputCmd->command, dst_componentid, pInputCmd->result[0].pathname);
 
         runSteps = __LINE__;
+	/* Coverity Issue Fix - CID:110537 : Forward NULL*/
+	if(dst_componentid == NULL)
+	{
+		printf("%s-%d:Coverity Error occured as Forward NULL in dst_componentid\n",__FUNCTION__,__LINE__);
+		return -1;
+	}
 
         if ( strncmp( pInputCmd->command, "addtable"     , 4 ) == 0 )
         {
@@ -2277,11 +2290,17 @@ int main(int argc, char *argv[])
             if(cmdFormat == 1)
             {
                 args = (char **)calloc(MAX_CMD_ARG_NUM, sizeof(char *));
+                /* Coverity Issue Fix - CID:53037 : Forward NULL*/
+		if( args == NULL)
+		{	
+			printf("%s-%d:Coverity Error occured as Forward NULL in args\n",__FUNCTION__,__LINE__);
+			return -1;
+		}
                 analyse_interactive_cmd(inputLine, args);
             }
             else
                 args = &argv[nextIndex];
-
+		
             ret = analyse_cmd(args, &inputCmd);
 
             runSteps = __LINE__;
