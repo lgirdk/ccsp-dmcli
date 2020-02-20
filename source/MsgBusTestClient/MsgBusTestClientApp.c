@@ -154,7 +154,7 @@ Usage : \n\
 \n", argv[0]);
         return 0;
     }
-
+     
     while (1) {
         int option_index = 0;
 
@@ -176,19 +176,39 @@ Usage : \n\
                 break;
 
             case 't':
-                timeout_uS = atof(optarg) * 1000 * 1000;
+                 /* Coverity Issue Fix - CID:110523 : Forward NULL*/
+                 if (optarg == NULL) {
+        		printf("optarg == NULL, missing optional argument in case 't' \n");
+       			 return -1;
+    		}
+                	timeout_uS = atof(optarg) * 1000 * 1000;
                 break;
 
             case 's':
-                setCount = atoi(optarg);
+                  /* Coverity Issue Fix - CID:110523 : Forward NULL */
+            	  if (optarg == NULL) {
+        	    printf("optarg == NULL, missing optional argument in case 's' \n");
+       			 return -1;
+    		}
+                	setCount = atoi(optarg);
                 break;
 
             case 'g':
-                getCount = atoi(optarg);
+                  /* Coverity Issue Fix - CID:110523 : Forward NULL*/
+                  if (optarg == NULL) {
+        		printf("optarg == NULL, missing optional argument in case 'g' \n");
+        		return -1;
+    		}
+                	getCount = atoi(optarg);
                 break;
 
             case 'd':
-                nsDiscTestCount = atoi(optarg);
+                  /* Coverity Issue Fix - CID:110523 : Forward NULL*/
+            	  if (optarg == NULL) {
+       			 printf("optarg == NULL, missing optional argument in case 'd' \n");
+       			 return -1;
+    		}
+                	nsDiscTestCount = atoi(optarg);
                 break;
 
             case '?':
@@ -240,6 +260,10 @@ Usage : \n\
         }
 
         if(nsDiscTestCount) {
+             /* Coverity Issue Fix - CID:110655 : Divide By Zero*/
+            if (nsDiscMetrics.count < 1) {
+        	nsDiscMetrics.count = 1;
+    	    }
             nsDiscMetrics.average = nsDiscMetrics.total * 1.0 / nsDiscMetrics.count;
             printf("Namespace Discovery, count=%lu, minTime=%lu, maxTime=%lu, total=%lu, average=%lf, units in uSec\n",
                     nsDiscMetrics.count, nsDiscMetrics.min, nsDiscMetrics.max, nsDiscMetrics.total, nsDiscMetrics.average);
@@ -358,12 +382,20 @@ Usage : \n\
     } while(1);
 
     if(setCount) {
-        sMetrics.average = sMetrics.total * 1.0 / sMetrics.count;
+        /* Coverity Issue Fix - CID:110455 : Divide By Zero */
+       if (sMetrics.count < 1) {
+        	sMetrics.count = 1;
+    	}
+	sMetrics.average = sMetrics.total * 1.0 / sMetrics.count;
         printf("Set Parameter, count=%lu, minTime=%lu, maxTime=%lu, total=%lu, average=%lf, units in uSec\n",
                 sMetrics.count, sMetrics.min, sMetrics.max, sMetrics.total, sMetrics.average);
     }
 
     if(getCount) {
+	/* Coverity Issue Fix - CID:110571 : Divide By Zero */
+	 if (gMetrics.count < 1) {
+        	gMetrics.count = 1;
+    	}
         gMetrics.average = gMetrics.total * 1.0 / gMetrics.count;
         printf("Get Parameter, count=%lu, minTime=%lu, maxTime=%lu, total=%lu, average=%lf, units in uSec\n",
                 gMetrics.count, gMetrics.min, gMetrics.max, gMetrics.total, gMetrics.average);
