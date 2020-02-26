@@ -93,7 +93,7 @@ static long long timespec_sub(struct timespec * recent, struct timespec * old)
     return (difference.tv_sec * 1000000ll + difference.tv_nsec / 1000ll);
 }
 
-inline int discoverComp(void *handle, char *namespace, char **name, char **path, long long *elapsedTime) {
+static int discoverComp(void *handle, char *namespace, char **name, char **path, long long *elapsedTime) {
     int ret = 0;
     int size = 0;
     componentStruct_t **ppComponents = NULL;
