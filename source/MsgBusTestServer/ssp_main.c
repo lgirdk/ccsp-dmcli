@@ -228,8 +228,10 @@ int main(int argc, char* argv[])
             {
                 fprintf(debugLogFile, "Log File [%s] Opened for Writing in Append Mode \n",  argv[idx+1]);
             }
-
-        }        
+          
+            /* Coverity Fix CID:110556 RESOURCE_LEAK */
+            fclose(debugLogFile);
+        }                  
     }
 
     pComponentName = CCSP_COMPONENT_NAME_TESTSERVER;

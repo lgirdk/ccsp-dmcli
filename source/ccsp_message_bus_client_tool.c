@@ -342,9 +342,15 @@ static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
     fd1 = open( cmdFile, O_RDONLY );
     if( fd1 > 0 )
     {
-        read( fd1, cmdName, sizeof(cmdName)-1 );
+        /*Coverity Fix CID:72093 CHECKED_RETURN */
+        if( read( fd1, cmdName, sizeof(cmdName)-1 ) <= 0)
+            fprintf( stderr, "Error in read function:%s\n",__FUNCTION__ );
+      
+       /* Coverity Fix CID:68933 RESOURCE_LEAK */
         close(fd1);
+
     }
+      
 
     /* dump general information */
     fprintf( stderr, "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" );
@@ -670,7 +676,9 @@ int CCSP_Message_Bus_Send_Event
         }
     }
 
-    dbus_connection_send (conn, message, NULL);
+     /*Coverity Fix CID: 80290 CHECKED_RETURN */
+    if(dbus_connection_send (conn, message, NULL)!= TRUE)
+       printf("dbus_connection_send is failed\n");
 
     dbus_message_unref (message);
     return CCSP_Message_Bus_OK;
@@ -702,7 +710,7 @@ test_Send_Thread
 
     while(1)
     {
-        char *resp;
+        char *resp = NULL;
         if(argc >= 4)
         {
 
@@ -713,6 +721,8 @@ test_Send_Thread
            if (mod == 0) 
 	   {	
         	printf("count cannot be zero\n");
+                /*Coverity Fix CID:121819 RESOURCE_LEAK */
+                AnscFreeMemory(resp);
         	return -1;
     	   } 		
 
@@ -2338,6 +2348,9 @@ int main(int argc, char *argv[])
             else if ( ret == -2 )
             {
                 printf(color_end);
+                /*Coverity Fix CID:67422 RESOURCE_LEAK */
+                free(args);
+                args = NULL;
                 return 0;
             }
             else if ( ret == -3 )
