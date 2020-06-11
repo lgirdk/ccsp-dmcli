@@ -268,7 +268,9 @@ Usage : \n\
             printf("Namespace Discovery, count=%lu, minTime=%lu, maxTime=%lu, total=%lu, average=%lf, units in uSec\n",
                     nsDiscMetrics.count, nsDiscMetrics.min, nsDiscMetrics.max, nsDiscMetrics.total, nsDiscMetrics.average);
         }
-
+        /* Coverity Fix CID:110503 RESOURCE_LEAK */
+        free(ppDestComponentName);
+        ppDestComponentName = NULL;
         return 0;
     }
 
@@ -368,7 +370,11 @@ Usage : \n\
             usleep(timeout_uS);
 
             if(interleaved)
+            {   /* Coverity Fix CID:110497 RESOURCE_LEAK */
+                free(ppDestPath);
+                ppDestPath = NULL;
                 break;
+            }
         }
 
         if(interleaved) {
@@ -400,6 +406,9 @@ Usage : \n\
         printf("Get Parameter, count=%lu, minTime=%lu, maxTime=%lu, total=%lu, average=%lf, units in uSec\n",
                 gMetrics.count, gMetrics.min, gMetrics.max, gMetrics.total, gMetrics.average);
     }
+       /* Coverity Fix CID:110518 RESOURCE_LEAK */
+       free(bus_handle);
+       bus_handle  = NULL;
 
     return 0;
 }
