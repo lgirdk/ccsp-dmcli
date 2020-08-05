@@ -877,11 +877,11 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
                else
                {
                   printf(color_error"Ccsp msg bus internal error %d \n"color_end,ret);
-	          if(strncmp(ret, CCSP_ERR_NOT_CONNECT, strlen(ret)) == 0)
+	          if(ret == CCSP_ERR_NOT_CONNECT)
 	          {
 	             t2_event_d("SYS_ERROR_CCSPBus_error190", 1);	
 	          }
-	          else if(strncmp(ret, CCSP_ERR_TIMEOUT, strlen(ret)) == 0)
+	          else if(ret == CCSP_ERR_TIMEOUT)
 	          {
 	             t2_event_d("SYS_ERROR_CCSPBus_error191", 1);
 	          }
