@@ -47,6 +47,7 @@
 #include <dslh_definitions_database.h>
 #include <sys/ucontext.h>
 #include "ansc_platform.h"
+#include <ccsp_psm_helper.h>
 
 // TELEMETRY 2.0 //RDKB-25996
 #include <telemetry_busmessage_sender.h>
@@ -77,11 +78,12 @@ errno_t strcmp_s(const char *,int,const char *,int *);
 #define strcat_s(dst,max,src) EOK; \
  strcat(dst,src);
 
-//adding strcmp_s defination
+//adding strcmp_s definition
 errno_t strcmp_s(const char * d,int max ,const char * src,int *r)
 {
-  *r= strcmp(d,src);
-  return EOK;
+    UNREFERENCED_PARAMETER(max);
+    *r= strcmp(d,src);
+    return EOK;
 }
 #endif
 
@@ -112,9 +114,9 @@ char            cmdLine[1024]  = {0};
 int             runSteps = __LINE__;
 
 int 
-param_rtt_cmp (const struct param_rtt *c1, const struct param_rtt *c2)
+param_rtt_cmp (const void *c1, const void *c2)
 {
-  return c1->rtt < c2->rtt;
+  return ((struct param_rtt *)c1)->rtt < ((struct param_rtt *)c2)->rtt;
 }
 
 void free_rtt_result()
@@ -305,7 +307,7 @@ int ccsp_type_from_name(char *name, enum dataType_e *type_ptr)
 {
   errno_t rc = -1;
   int ind = -1;
-  int i = 0;
+  unsigned int i = 0;
   if(name == NULL)
      return 0;
   for (i = 0 ; i < NUM_CCSP_TYPES ; ++i)
@@ -322,8 +324,8 @@ int ccsp_type_from_name(char *name, enum dataType_e *type_ptr)
 
 static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
 {
+    UNREFERENCED_PARAMETER(context);
     int fd1;
-    ucontext_t *ctx = (ucontext_t *)context;
     pid_t pid = getpid();
     char mapsFile[32]     = {0};
     char cmdFile[32]      = {0};
@@ -426,6 +428,7 @@ path_message_func (DBusConnection  *conn,
                    DBusMessage     *message,
                    void            *user_data)
 {
+    UNREFERENCED_PARAMETER(user_data);
     const char *interface = dbus_message_get_interface(message);
     const char *method   = dbus_message_get_member(message);
     DBusMessage *reply;
@@ -723,7 +726,7 @@ test_Send_Thread
         	printf("count cannot be zero\n");
                 /*Coverity Fix CID:121819 RESOURCE_LEAK */
                 AnscFreeMemory(resp);
-        	return -1;
+        	return (void *)(-1);
     	   } 		
 
 	    if( ( count % mod ) == 0)
@@ -759,18 +762,22 @@ test_Send_Thread
     return 0;
 }
 
-
+//unused function
+#if 0
 static DBusHandlerResult
 evt_callback (DBusConnection  *conn,
               DBusMessage     *message,
               void            *user_data)
 {
+    UNREFERENCED_PARAMETER(user_data);
+    UNREFERENCED_PARAMETER(conn);
     const char *interface = dbus_message_get_interface(message);
     const char *method   = dbus_message_get_member(message);
     printf("evt_callback %s %s \n", interface , method);
     return DBUS_HANDLER_RESULT_HANDLED;
 
 }
+#endif
 
 /* This function transfers bus return values to string*/
 char *ccspReturnValueToString(unsigned long ret)
@@ -808,7 +815,6 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
     parameterAttributeStruct_t ** parameterAttr = NULL;
     componentStruct_t ** ppComponents = NULL;
 	int ct ;
-	long total = 0;
     /* Coverity Issue Fix - CID:110565,110596  : UnInitialised Variable*/
     unsigned int psmType = 0;
     char *psmValue = NULL;
@@ -2094,6 +2100,7 @@ int analyse_interactive_cmd(char *inputLine, char **args)
 
 void signal_interrupt(int i)
 {
+    UNREFERENCED_PARAMETER(i);
     return;
 }
 
@@ -2280,7 +2287,11 @@ int main(int argc, char *argv[])
         
         runSteps = __LINE__;
 
-        fgets(inputLine, sizeof(inputLine), stdin);
+        if (fgets(inputLine, sizeof(inputLine), stdin) == NULL)
+        {
+            printf("%s,%d: error in reading inputLine\n", __FUNCTION__,__LINE__);
+            return -1;
+        }
     }
     else
     {
@@ -2290,7 +2301,7 @@ int main(int argc, char *argv[])
     }
     
     // we begin the initiation of dbus
-    ret = CCSP_Message_Bus_Init("ccsp.busclient", pCfg, &bus_handle, Ansc_AllocateMemory_Callback, Ansc_FreeMemory_Callback);
+    ret = CCSP_Message_Bus_Init("ccsp.busclient", pCfg, &bus_handle, (CCSP_MESSAGE_BUS_MALLOC)Ansc_AllocateMemory_Callback, Ansc_FreeMemory_Callback);
     if ( ret == -1 )
     {
         printf(color_end);
@@ -2386,7 +2397,11 @@ int main(int argc, char *argv[])
         memset(inputLine, 0, sizeof(inputLine));
         memset(&inputCmd, 0, sizeof(inputCmd));
 
-        fgets(inputLine, sizeof(inputLine), stdin);
+        if (fgets(inputLine, sizeof(inputLine), stdin) == NULL)
+        {
+            printf("%s,%d: error in reading inputLine\n", __FUNCTION__,__LINE__);
+            return -1;
+        }
     }
 
     runSteps = __LINE__;

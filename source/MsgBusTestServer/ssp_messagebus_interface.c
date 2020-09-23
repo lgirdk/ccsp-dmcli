@@ -98,8 +98,8 @@ ssp_Mbi_MessageBusEngage
                 component_id,
                 config_file,
                 &bus_handle,
-                Ansc_AllocateMemory_Callback,           /* mallocfc, use default */
-                Ansc_FreeMemory_Callback                /* freefc,   use default */
+                (CCSP_MESSAGE_BUS_MALLOC)Ansc_AllocateMemory_Callback,           /* mallocfc, use default */
+                Ansc_FreeMemory_Callback                                         /* freefc,   use default */
             );
 
     if ( returnStatus != ANSC_STATUS_SUCCESS )
@@ -180,6 +180,7 @@ ssp_Mbi_Initialize
         void * user_data
     )
 {
+    UNREFERENCED_PARAMETER(user_data);
     ANSC_STATUS             returnStatus    = ANSC_STATUS_SUCCESS;
 
     return ( returnStatus == ANSC_STATUS_SUCCESS ) ? 0 : 1;
@@ -192,6 +193,7 @@ ssp_Mbi_Finalize
         void*               user_data
     )
 {
+    UNREFERENCED_PARAMETER(user_data);
     ANSC_STATUS             returnStatus    = ANSC_STATUS_SUCCESS;
 
     returnStatus = ssp_cancel();
@@ -206,6 +208,7 @@ ssp_Mbi_Buscheck
         void*               user_data
     )
 {
+    UNREFERENCED_PARAMETER(user_data);
     return 0;
 }
 
@@ -217,6 +220,7 @@ ssp_Mbi_FreeResources
         void                * user_data
     )
 {
+    UNREFERENCED_PARAMETER(user_data);
     ANSC_STATUS             returnStatus    = ANSC_STATUS_SUCCESS;
 
     if ( priority == CCSP_COMMON_COMPONENT_FREERESOURCES_PRIORITY_Low )
