@@ -52,6 +52,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <getopt.h>
+#include <ansc_platform.h>
 
 // for PC build with gcc 4.4.3 on Ubuntu 10.4 Lucid,
 // <asm/sigcontext.h> will redefine some definitions from <bits/sigcontext.h>
@@ -220,7 +221,7 @@ Usage : \n\
         }
     }
 
-    printf("Configurations, timeout_uS=%lu, setCount=%lu, getCount=%lu, isInterleavedOperation=%d, nsDiscOnGetSet=%d, nsDiscTest=%d, nsDiscTestCount=%d\n",
+    printf("Configurations, timeout_uS=%lu, setCount=%lu, getCount=%lu, isInterleavedOperation=%d, nsDiscOnGetSet=%d, nsDiscTest=%d, nsDiscTestCount=%lu\n",
             timeout_uS, setCount, getCount, interleaved, nsDiscOnGetSet, nsDiscTest, nsDiscTestCount);
 
     if(interleaved && getCount != setCount) {
@@ -229,7 +230,7 @@ Usage : \n\
     }
 
     // we begin the initiation of dbus
-    ret = CCSP_Message_Bus_Init("ccsp.busclient", pCfg, &bus_handle, Ansc_AllocateMemory_Callback, Ansc_FreeMemory_Callback);
+    ret = CCSP_Message_Bus_Init("ccsp.busclient", pCfg, &bus_handle, (CCSP_MESSAGE_BUS_MALLOC)Ansc_AllocateMemory_Callback, Ansc_FreeMemory_Callback);
     if ( ret == -1 )
     {
         printf("CCSP_Message_Bus_Init Error\n");
