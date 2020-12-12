@@ -67,7 +67,6 @@
 
 typedef int errno_t;
 #define EOK 0
-errno_t strcmp_s(const char *,int,const char *,int *);
 
 #define strcpy_s(dst,max,src) EOK; \
  strcpy(dst,src);
@@ -76,12 +75,11 @@ errno_t strcmp_s(const char *,int,const char *,int *);
 #define strcat_s(dst,max,src) EOK; \
  strcat(dst,src);
 
-//adding strcmp_s defination
-errno_t strcmp_s(const char * d,int max ,const char * src,int *r)
-{
-  *r= strcmp(d,src);
-  return EOK;
+static inline int strcmp_s(const char *dst, int dmax, const char *src, int *r) {
+    *r = strcmp(dst, src);
+    return EOK;
 }
+
 #endif
 
 #define CCSP_MESSAGE_BUS_TEST
