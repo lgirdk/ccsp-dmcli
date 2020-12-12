@@ -69,7 +69,6 @@
 #ifdef SAFEC_DUMMY_API
 typedef int errno_t;
 #define EOK 0
-errno_t strcmp_s(const char *,int,const char *,int *);
 
 #define strcpy_s(dst,max,src) EOK; \
  strcpy(dst,src);
@@ -78,13 +77,12 @@ errno_t strcmp_s(const char *,int,const char *,int *);
 #define strcat_s(dst,max,src) EOK; \
  strcat(dst,src);
 
-//adding strcmp_s definition
-errno_t strcmp_s(const char * d,int max ,const char * src,int *r)
-{
-    UNREFERENCED_PARAMETER(max);
-    *r= strcmp(d,src);
+static inline int strcmp_s(const char *dst, int dmax, const char *src, int *r) {
+    UNREFERENCED_PARAMETER(dmax);
+    *r = strcmp(dst, src);
     return EOK;
 }
+
 #endif
 
 #ifdef CCSP_MESSAGE_BUS_TEST
