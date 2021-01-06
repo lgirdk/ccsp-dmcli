@@ -44,6 +44,8 @@
 #include <signal.h>
 #include "ccsp_memory.h"
 #include <ccsp_custom.h>
+#include <ccsp_alias_mgr.h>
+#include <ccsp_alias_mgr_helper.h>
 #include <dslh_definitions_database.h>
 #include <sys/ucontext.h>
 #include "ansc_platform.h"
@@ -56,6 +58,8 @@
 #if !defined(CCSP_INC_no_asm_sigcontext_h)
     #include <asm/sigcontext.h>
 #endif
+
+#define CCSP_TR069PA_CUSTOM_MAPPER_XML_FILE "/usr/ccsp/tr069pa/custom_mapper.xml"
 
 #ifndef SAFEC_DUMMY_API
 #include "safe_str_lib.h"
@@ -87,6 +91,8 @@ static inline int strcmp_s(const char *dst, int dmax, const char *src, int *r) {
 #ifdef CCSP_MESSAGE_BUS_TEST
 
 static void *bus_handle = NULL;
+
+static ANSC_HANDLE aliasMgr = NULL; // AliasManager handle for DataModel names aliasing
 
 static char dst_pathname_cr[64] =  {0};
 static char subsystem_prefix[32] = "";
@@ -813,6 +819,8 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
     errno_t rc  = -1;
     int     ind = -1;
     
+    char *interNameForNS = NULL;
+    char *internalNames[BUSCLIENT_MAX_COUNT_SUPPORTED] = {NULL};
    
     //CCSP_Msg_SleepInMilliSeconds(500);
 
@@ -832,6 +840,15 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
         else
         {
             gettimeofday(&start, NULL);
+
+            if (aliasMgr != NULL)
+            {
+                interNameForNS = CcspAliasMgrGetFirstInternalName(aliasMgr, pInputCmd[0].result[0].pathname);
+                if (interNameForNS)
+                {
+                    pInputCmd[0].result[0].pathname = interNameForNS;
+                }
+            }
 
             ret = CcspBaseIf_discComponentSupportingNamespace 
                 (
@@ -1026,6 +1043,19 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             {           
                 val[i].parameterName  = AnscCloneString(pInputCmd->result[i].pathname);
 
+                if (aliasMgr != NULL)
+                {
+                    internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, val[i].parameterName);
+                    if (internalNames[i])
+                    {
+                      if (val[i].parameterName)
+                      {
+                          AnscFreeMemory(val[i].parameterName);
+                      }
+                      val[i].parameterName = internalNames[i];
+                    }
+                }
+
                 runSteps = __LINE__;
                 rc = strcmp_s("void", strlen("void"), pInputCmd->result[i].val2, &ind);
                 if(rc != EOK)
@@ -1212,6 +1242,20 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             while ( pInputCmd->result[size].pathname )
             {
                 valAttr[size].parameterName  = AnscCloneString(pInputCmd->result[size].pathname);
+
+                if (aliasMgr != NULL)
+                {
+                    internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, valAttr[size].parameterName);
+                    if (internalNames[i])
+                    {
+                      if (valAttr[size].parameterName)
+                      {
+                        AnscFreeMemory(valAttr[size].parameterName);
+                      }
+                      valAttr[size].parameterName = internalNames[i];
+                    }
+                }
+
                 if ( pInputCmd->result[size].val1 )
                 {
                     valAttr[size].notificationChanged = 1;
@@ -1344,6 +1388,16 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             while ( pInputCmd->result[i].pathname )
             {
                 parameterNames[i] = pInputCmd->result[i].pathname;
+
+                if (aliasMgr != NULL)
+                {
+                    internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[i]);
+                    if (internalNames[i])
+                    {
+                      parameterNames[i] = internalNames[i];
+                    }
+                }
+
                 i++;
             }
 
@@ -1427,6 +1481,16 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             while ( pInputCmd->result[i].pathname )
             {
                 parameterNames[i] = pInputCmd->result[i].pathname;
+
+                if (aliasMgr != NULL)
+                {
+                  internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[i]);
+                  if (internalNames[i])
+                  {
+                     parameterNames[i] = internalNames[i];
+                  }
+                }
+
                 i++;
             }
             gettimeofday(&start, NULL);
@@ -1563,6 +1627,16 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             while ( pInputCmd->result[i].pathname )
             {
                 parameterNames[i] = pInputCmd->result[i].pathname;
+
+                if (aliasMgr != NULL)
+                {
+                    internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[i]);
+                    if (internalNames[i])
+                    {
+                      parameterNames[i] = internalNames[i];
+                    }
+                }
+
                 i++;
             }
 
@@ -1674,6 +1748,21 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
 
         printf("\n"color_end);
         
+    }
+
+    if (interNameForNS)
+    {
+        AnscFreeMemory(interNameForNS);
+        interNameForNS = NULL;
+    }
+
+    for (i = 0; i < BUSCLIENT_MAX_COUNT_SUPPORTED; i++)
+    {
+        if (internalNames[i])
+        {
+            AnscFreeMemory(internalNames[i]);
+            internalNames[i] = NULL;
+        }
     }
     
     while( size2 && ppComponents)
@@ -2107,6 +2196,26 @@ static void signal_interrupt (int i)
             print_help();
 
 
+/**************************************************************************/
+/*! \fn bool is_customer_data_model()
+ **************************************************************************
+ *  \brief Check whether customer data-model is in place
+ *  \return true if the customer data-model is enabled
+ **************************************************************************/
+static bool is_customer_data_model (void)
+{
+    char sysbuf[8];
+
+    syscfg_get (NULL, "custom_data_model_enabled", sysbuf, sizeof(sysbuf));
+
+    if (strcmp (sysbuf, "1") == 0)
+    {
+        return true;
+    }
+
+    return false;
+}
+
 int main (int argc, char *argv[])
 {
 //    void *bus_handle2;
@@ -2294,6 +2403,19 @@ int main (int argc, char *argv[])
         return -1;
     }
 
+    //Load AliasManager
+    if (is_customer_data_model())
+    {
+        aliasMgr = CcspAliasMgrInitialize();
+
+        if (!CcspAliasMgrLoadMappingFile(aliasMgr, CCSP_TR069PA_CUSTOM_MAPPER_XML_FILE))
+        {
+            printf("dmcli: Failed to load alias mapping file %s\n", CCSP_TR069PA_CUSTOM_MAPPER_XML_FILE);
+            CcspAliasMgrFree(aliasMgr);
+            aliasMgr = NULL;
+        }
+    }
+
     runSteps = __LINE__;
 
     while( 1 )
@@ -2392,6 +2514,11 @@ int main (int argc, char *argv[])
     // exit     
     CCSP_Message_Bus_Exit(bus_handle);
     //printf("count %d %d  \n", count, errcount );
+
+    if (aliasMgr)
+    {
+        CcspAliasMgrFree(aliasMgr);
+    }
 
     runSteps = __LINE__;
     

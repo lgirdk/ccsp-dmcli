@@ -29,3 +29,4 @@ bin_PROGRAMS = dmcli
 dmcli_CPPFLAGS = -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include $(CPPFLAGS)
 dmcli_SOURCES = ccsp_message_bus_client_tool.c
 dmcli_LDFLAGS =  -lccsp_common
+dmcli_LDFLAGS += -lsyscfg
