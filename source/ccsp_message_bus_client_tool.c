@@ -2055,8 +2055,14 @@ static int analyse_interactive_cmd (char *inputLine, char **args)
     if(args == NULL)
         return 0;
 
-    inputLine[strlen(inputLine)-1] = '\0';
     len = strlen(inputLine);
+
+    if ((len > 0) && (inputLine[len - 1] == '\n'))
+    {
+        inputLine[len - 1] = 0;
+        len--;
+    }
+
     while((index < len) && (arg_num < MAX_CMD_ARG_NUM))
     {
         if(!quote_flag)
