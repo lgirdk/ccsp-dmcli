@@ -2126,8 +2126,8 @@ int main(int argc, char *argv[])
     int             ret = 0;
     char *          pCfg = CCSP_MSG_BUS_CFG;
     int             i = 0;
-    char            inputLine[2048]  = {0};
-    CMD_CONTENT     inputCmd         = {0};
+    char            inputLine[2048];
+    CMD_CONTENT     inputCmd;
     FILE           *fp               = NULL;
     int             nextIndex        = 0;
     int             cmdFormat        = 0;
@@ -2167,6 +2167,8 @@ int main(int argc, char *argv[])
             return 0;
         }
     }
+
+    inputLine[0] = 0;
 
     // handle parameters
     //if ( argc <= 4 )
@@ -2334,6 +2336,8 @@ int main(int argc, char *argv[])
             else
                 args = &argv[nextIndex];
 		
+            memset(&inputCmd, 0, sizeof(inputCmd));
+
             ret = analyse_cmd(args, &inputCmd);
 
             runSteps = __LINE__;
@@ -2392,10 +2396,7 @@ int main(int argc, char *argv[])
         if ( cmdFormat == 2 )
             break;
 
-
         printf(color_succeed"dmcli>");
-        memset(inputLine, 0, sizeof(inputLine));
-        memset(&inputCmd, 0, sizeof(inputCmd));
 
         if (fgets(inputLine, sizeof(inputLine), stdin) == NULL)
         {
