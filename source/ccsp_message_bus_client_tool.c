@@ -2156,10 +2156,11 @@ int main(int argc, char *argv[])
     }
     else
     {
-        if ( !strncmp( argv[1], "help", 4 ) ||
-             !strncmp( argv[1], "?", 1 ) ||
-             !strncmp( argv[1], "-h", 2 ) ||
-             !strncmp( argv[1], "-help", 5 )
+        if ( !strcmp( argv[1], "help") ||
+             !strcmp( argv[1], "?") ||
+             !strcmp( argv[1], "-h") ||
+             !strcmp( argv[1], "-help") ||
+             !strcmp( argv[1], "--help")
             )
         {
             PRINT_HELP(argv[0]);
