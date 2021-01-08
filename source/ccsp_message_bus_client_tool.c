@@ -61,11 +61,10 @@
 #include "safe_str_lib.h"
 #endif
 
-#define CCSP_MESSAGE_BUS_TEST
-
 #define RDK_SAFECLIB_ERR(func)  printf("safeclib error at %s %s:%d %s", __FILE__, __FUNCTION__, __LINE__, func)
 
 #ifdef SAFEC_DUMMY_API
+
 typedef int errno_t;
 #define EOK 0
 errno_t strcmp_s(const char *,int,const char *,int *);
@@ -85,12 +84,14 @@ errno_t strcmp_s(const char * d,int max ,const char * src,int *r)
 }
 #endif
 
+#define CCSP_MESSAGE_BUS_TEST
+
 #ifdef CCSP_MESSAGE_BUS_TEST
 
-void *bus_handle = NULL;
+static void *bus_handle = NULL;
 
-char dst_pathname_cr[64] =  {0};
-char subsystem_prefix[32] = "";
+static char dst_pathname_cr[64] =  {0};
+static char subsystem_prefix[32] = "";
 
 #define MAX_PARAM 20000
 struct param_rtt
@@ -99,30 +100,28 @@ struct param_rtt
   int rtt;
 };
 
-
-typedef struct _RETURN_VALUE_TO_STRING_
+typedef struct
 {
-    char *        description;
+    char *description;
     unsigned long retValue;
-} RETURN_VALUE_TO_STRING;
+}
+RETURN_VALUE_TO_STRING;
 
-struct param_rtt * rtt_result = NULL;
-int rtt_ct = 0;
-char            cmdLine[1024]  = {0};
-int             runSteps = __LINE__;
+static struct param_rtt *rtt_result = NULL;
+static int rtt_ct = 0;
+static char cmdLine[1024]  = {0};
+static int runSteps = __LINE__;
 
-int 
-param_rtt_cmp (const struct param_rtt *c1, const struct param_rtt *c2)
+static int param_rtt_cmp (const struct param_rtt *c1, const struct param_rtt *c2)
 {
-  return c1->rtt < c2->rtt;
+    return c1->rtt < c2->rtt;
 }
 
-void free_rtt_result()
+static void free_rtt_result (void)
 {
-	rtt_ct = 0;
-    AnscFreeMemory(rtt_result);
+    rtt_ct = 0;
+    AnscFreeMemory (rtt_result);
     rtt_result = NULL;
-
 }
 
 #define color_parametername    color_green
@@ -131,11 +130,11 @@ void free_rtt_result()
 #define color_succeed          color_green
 #define color_end              color_none
 
-#define color_gray "\033[1;30m"
+#define color_gray   "\033[1;30m"
 #define color_green  "\033[0;32m"
 #define color_red    "\033[0;31m"
 #define color_yellow "\033[0;33m"
-#define color_none "\033[0m"
+#define color_none   "\033[0m"
 
 #define BUSCLIENT_MAX_COUNT_SUPPORTED 20
 #define MAX_CMD_ARG_NUM               20*3+2
@@ -148,7 +147,7 @@ typedef struct ccsp_pair {
   enum dataType_e   type;
 } CCSP_PAIR;
 
-CCSP_PAIR ccsp_type_table[] = {
+static CCSP_PAIR ccsp_type_table[] = {
   { "string",   ccsp_string },
   { "int",      ccsp_int },
   { "uint",     ccsp_unsignedInt },
@@ -177,7 +176,7 @@ typedef struct
     TRIPLE_VALUE  result[BUSCLIENT_MAX_COUNT_SUPPORTED+1];
 }CMD_CONTENT, *PCMD_CONTENT;
 
-char * help_description[] =
+static char * help_description[] =
 {
     color_parametername"setvalues"color_parametervalue" pathname type value [pathname type value] ... [commit]",
     color_parametername"setcommit"color_parametervalue,
@@ -242,7 +241,7 @@ static const char* Introspect_msg = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>
                                     ;
 
 
-RETURN_VALUE_TO_STRING retValueToString[] =
+static RETURN_VALUE_TO_STRING retValueToString[] =
 {
     {"CCSP_SUCCESS",                               100},
     {"CCSP_ERR_MEMORY_ALLOC_FAIL",                 101},
@@ -301,7 +300,7 @@ RETURN_VALUE_TO_STRING retValueToString[] =
     {NULL, 0}
 };
 
-int ccsp_type_from_name(char *name, enum dataType_e *type_ptr)
+static int ccsp_type_from_name(char *name, enum dataType_e *type_ptr)
 {
   errno_t rc = -1;
   int ind = -1;
@@ -404,7 +403,7 @@ static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
     _exit(1);
 }
 
-void enable_ccsp_exception_handlers( )
+static void enable_ccsp_exception_handlers (void)
 {
     struct sigaction sigact;
     
@@ -421,7 +420,7 @@ void enable_ccsp_exception_handlers( )
     return;
 }
 
-DBusHandlerResult
+static DBusHandlerResult
 path_message_func (DBusConnection  *conn,
                    DBusMessage     *message,
                    void            *user_data)
@@ -563,7 +562,7 @@ unpack:
                 printf("%s\n", str);
 
 */
-int  CCSP_Message_Bus_Send
+static int CCSP_Message_Bus_Send
 (
     void* bus_handle,
     char* component_id,
@@ -627,9 +626,7 @@ EXIT:
     return ret;
 }
 
-
-
-int CCSP_Message_Bus_Send_Event
+static int CCSP_Message_Bus_Send_Event
 (
     void* bus_handle,
     const char* path,
@@ -684,8 +681,6 @@ int CCSP_Message_Bus_Send_Event
     return CCSP_Message_Bus_OK;
 }
 
-
-
 typedef struct _test_data
 {
     void * bus_handle;
@@ -693,11 +688,7 @@ typedef struct _test_data
     int argc;
 } test_data;
 
-void *
-test_Send_Thread
-(
-    void * dataptr
-)
+static void *test_Send_Thread (void *dataptr)
 {
     test_data *pdata =(test_data*)dataptr;
     void * bus_handle = pdata->bus_handle;
@@ -773,7 +764,7 @@ evt_callback (DBusConnection  *conn,
 }
 
 /* This function transfers bus return values to string*/
-char *ccspReturnValueToString(unsigned long ret)
+static char *ccspReturnValueToString(unsigned long ret)
 {
     int i = 0;
 
@@ -789,7 +780,7 @@ char *ccspReturnValueToString(unsigned long ret)
 
 }
 
-int apply_cmd(PCMD_CONTENT pInputCmd )
+static int apply_cmd(PCMD_CONTENT pInputCmd )
 {
 //    void *bus_handle2;
     int ret ;
@@ -1709,8 +1700,7 @@ int apply_cmd(PCMD_CONTENT pInputCmd )
     return 1;
 }
 
-
-void print_help()
+static void print_help (void)
 {
     int i = 0;
     printf(color_parametername"Commands supported:"color_end"\n");
@@ -1725,7 +1715,7 @@ void print_help()
 
 /* return >0, it's right input
     or else it's bad format  */
-int analyse_cmd(char **args, PCMD_CONTENT pInputCmd)
+static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
 {
     char * pCmd = NULL;
     char * pPathname = NULL;
@@ -2042,7 +2032,7 @@ EXIT1:
     return 0;
 }
 
-int analyse_interactive_cmd(char *inputLine, char **args)
+static int analyse_interactive_cmd (char *inputLine, char **args)
 {
     int index = 0;
     int quote_flag = 0;
@@ -2092,7 +2082,7 @@ int analyse_interactive_cmd(char *inputLine, char **args)
     return 1;
 }
 
-void signal_interrupt(int i)
+static void signal_interrupt (int i)
 {
     return;
 }
@@ -2113,7 +2103,7 @@ void signal_interrupt(int i)
             print_help();
 
 
-int main(int argc, char *argv[])
+int main (int argc, char *argv[])
 {
 //    void *bus_handle2;
     int             ret = 0;
@@ -2313,11 +2303,11 @@ int main(int argc, char *argv[])
             {
                 args = (char **)calloc(MAX_CMD_ARG_NUM, sizeof(char *));
                 /* Coverity Issue Fix - CID:53037 : Forward NULL*/
-		if( args == NULL)
-		{	
-			printf("%s-%d:Coverity Error occured as Forward NULL in args\n",__FUNCTION__,__LINE__);
-			return -1;
-		}
+                if( args == NULL)
+                {
+                    printf("%s-%d:Coverity Error occured as Forward NULL in args\n",__FUNCTION__,__LINE__);
+                    return -1;
+                }
                 analyse_interactive_cmd(inputLine, args);
             }
             else
