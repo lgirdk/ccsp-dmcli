@@ -59,7 +59,7 @@
     #include <asm/sigcontext.h>
 #endif
 
-#define CCSP_TR069PA_CUSTOM_MAPPER_XML_FILE "/usr/ccsp/tr069pa/custom_mapper.xml"
+#define ALIAS_MANAGER_MAPPER_FILE "/usr/ccsp/custom_mapper.xml"
 
 #ifndef SAFEC_DUMMY_API
 #include "safe_str_lib.h"
@@ -2408,9 +2408,9 @@ int main (int argc, char *argv[])
     {
         aliasMgr = CcspAliasMgrInitialize();
 
-        if (!CcspAliasMgrLoadMappingFile(aliasMgr, CCSP_TR069PA_CUSTOM_MAPPER_XML_FILE))
+        if (!CcspAliasMgrLoadMappingFile(aliasMgr, ALIAS_MANAGER_MAPPER_FILE))
         {
-            printf("dmcli: Failed to load alias mapping file %s\n", CCSP_TR069PA_CUSTOM_MAPPER_XML_FILE);
+            printf("dmcli: Failed to load alias mapping file %s\n", ALIAS_MANAGER_MAPPER_FILE);
             CcspAliasMgrFree(aliasMgr);
             aliasMgr = NULL;
         }
