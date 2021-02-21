@@ -21,14 +21,12 @@ AM_CFLAGS += -D_ANSC_USER
 AM_CFLAGS += -D_ANSC_LITTLE_ENDIAN_
 AM_CFLAGS += -DCCSP_INC_no_asm_sigcontext_h
 AM_CFLAGS += -I$(top_srcdir)/source/MsgBusTestServer
-AM_LDFLAGS = -lccsp_common
 
-AM_CPPFLAGS = -Wall -Werror
 ACLOCAL_AMFLAGS = -I m4
-hardware_platform = i686-linux-gnu
 
 bin_PROGRAMS = MsgBusTestServer
-MsgBusTestServer_CPPFLAGS = -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include $(CPPFLAGS)
+
+MsgBusTestServer_CPPFLAGS =
 MsgBusTestServer_SOURCES = ssp_main.c cosa_MsgBusTest_dml.c plugin_main.c ssp_action.c ssp_messagebus_interface.c  dm_pack_datamodel.c 
 MsgBusTestServer_LDFLAGS =  -lccsp_common
 
