@@ -2387,12 +2387,7 @@ int main (int argc, char *argv[])
         */
        if (!bInteractive)
        {
-           rc = strcmp_s("true", strlen("true"), argv[idx], &ind);
-           if (rc != EOK)
-           {
-               RDK_SAFECLIB_ERR("strcmp_s");
-           }
-           else if (ind == 0)
+           if (strcmp(argv[idx], "true") == 0)
            {
                bInternalParam = TRUE;
                nextIndex = idx + 1;
