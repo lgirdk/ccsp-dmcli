@@ -2237,6 +2237,7 @@ int main (int argc, char *argv[])
     int             nextIndex        = 0;
     int             cmdFormat        = 0;
     BOOL            bFirstError      = true;
+    BOOL            bInternalParam   = FALSE;
     int             idx              = 0;
     BOOL            bInteractive     = FALSE;
     char            **args           = NULL;
@@ -2376,6 +2377,22 @@ int main (int argc, char *argv[])
        {
            nextIndex = idx;
        }
+
+       /* TODO: Interim fix to avoid loading ALIAS_MANAGER_MAPPER_FILE.
+        * All components which are already using alias manager to map external parameters (for e.g. gw_prov_app),
+        * can send this optional parameter in the dmcli command.
+        * e.g. dmcli eRT true getv/getvalues Device.XXXX.ParamName
+        * e.g. dmcli eRT true setv/setvalues Device.XXXX.ParamName string ParamValue
+        * Applicable for all other dmcli commands as well - getnames, getattributes, etc.
+        */
+       if (!bInteractive)
+       {
+           if (strcmp(argv[idx], "true") == 0)
+           {
+               bInternalParam = TRUE;
+               nextIndex = idx + 1;
+           }
+       }
     }
     else
     {
@@ -2420,7 +2437,7 @@ int main (int argc, char *argv[])
     }
 
     //Load AliasManager
-    if (is_customer_data_model())
+    if (is_customer_data_model() && !bInternalParam)
     {
         aliasMgr = CcspAliasMgrInitialize();
 
