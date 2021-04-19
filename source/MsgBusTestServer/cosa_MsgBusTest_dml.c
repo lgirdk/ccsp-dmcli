@@ -75,7 +75,7 @@ int ParamInt = 5;
 BOOL MsgBusTest_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* strValue)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if (AnscEqualString(ParamName, "ParamString", TRUE))
+    if (strcmp(ParamName, "ParamString") == 0)
     {
 	AnscCopyString(ParamString, strValue);
 	   
@@ -96,7 +96,7 @@ MsgBusTest_GetParamStringValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(pUlSize);
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "ParamString", TRUE))
+    if (strcmp(ParamName, "ParamString") == 0)
     {
 	AnscCopyString(pValue, ParamString);
         return 0;
@@ -108,7 +108,7 @@ MsgBusTest_GetParamStringValue
 BOOL MsgBusTest_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int value)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-	if( AnscEqualString(ParamName, "ParamInteger", TRUE))
+	if (strcmp(ParamName, "ParamInteger") == 0)
 	{
 		ParamInt = value;
 		return TRUE;
@@ -119,7 +119,7 @@ BOOL MsgBusTest_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int v
 BOOL MsgBusTest_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pInt)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if( AnscEqualString(ParamName, "ParamInteger", TRUE))
+    if (strcmp(ParamName, "ParamInteger") == 0)
     {
         *pInt = ParamInt;
         return TRUE;
