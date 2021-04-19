@@ -68,6 +68,7 @@
 
 #include "ansc_platform.h"
 #include "cosa_MsgBusTest_dml.h"
+#include  "safec_lib_common.h"
 
 char ParamString[64]= {"THROUGHPUTTEST555555"};
 int ParamInt = 5;
@@ -75,7 +76,11 @@ int ParamInt = 5;
 BOOL MsgBusTest_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* strValue)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if (AnscEqualString(ParamName, "ParamString", TRUE))
+    errno_t rc       = -1;
+    int     ind      = -1;
+    rc = strcmp_s("ParamString",strlen("ParamString"),ParamName,&ind);
+    ERR_CHK(rc);
+    if ((!ind) && (rc == EOK))
     {
 	AnscCopyString(ParamString, strValue);
 	   
@@ -95,8 +100,12 @@ MsgBusTest_GetParamStringValue
 {
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(pUlSize);
+    errno_t rc       = -1;
+    int     ind      = -1;
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "ParamString", TRUE))
+    rc = strcmp_s("ParamString",strlen("ParamString"),ParamName,&ind);
+    ERR_CHK(rc);
+    if ((!ind) && (rc == EOK))
     {
 	AnscCopyString(pValue, ParamString);
         return 0;
@@ -108,18 +117,26 @@ MsgBusTest_GetParamStringValue
 BOOL MsgBusTest_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int value)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-	if( AnscEqualString(ParamName, "ParamInteger", TRUE))
-	{
+    errno_t rc       = -1;
+    int     ind      = -1;
+    rc = strcmp_s("ParamInteger",strlen("ParamInteger"),ParamName,&ind);
+    ERR_CHK(rc);
+    if ((!ind) && (rc == EOK))
+    {
 		ParamInt = value;
 		return TRUE;
-	}
+    }
 	return FALSE;
 }
 
 BOOL MsgBusTest_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pInt)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if( AnscEqualString(ParamName, "ParamInteger", TRUE))
+    errno_t rc       = -1;
+    int     ind      = -1;
+    rc = strcmp_s("ParamInteger",strlen("ParamInteger"),ParamName,&ind);
+    ERR_CHK(rc);
+    if ((!ind) && (rc == EOK))
     {
         *pInt = ParamInt;
         return TRUE;
