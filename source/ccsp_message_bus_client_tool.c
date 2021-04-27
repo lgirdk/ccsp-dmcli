@@ -33,6 +33,12 @@
    limitations under the License.
 **********************************************************************/
 
+/*
+   Define CCSP_ALIAS_MGR to use the original RDKB Alias Manager APIs.
+   Leave undefined to use the (experimental) new replacements.
+*/
+//#define CCSP_ALIAS_MGR 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,8 +50,12 @@
 #include <signal.h>
 #include "ccsp_memory.h"
 #include <ccsp_custom.h>
+#ifdef CCSP_ALIAS_MGR
 #include <ccsp_alias_mgr.h>
 #include <ccsp_alias_mgr_helper.h>
+#else
+#include <custom_alias_utils.h>
+#endif
 #include <dslh_definitions_database.h>
 #include <sys/ucontext.h>
 #include "ansc_platform.h"
@@ -92,7 +102,11 @@ static inline int strcmp_s(const char *dst, int dmax, const char *src, int *r) {
 
 static void *bus_handle = NULL;
 
+#ifdef CCSP_ALIAS_MGR
 static ANSC_HANDLE aliasMgr = NULL; // AliasManager handle for DataModel names aliasing
+#else
+static int alias_mapper_enabled = 0;
+#endif
 
 static char dst_pathname_cr[64] =  {0};
 static char subsystem_prefix[32] = "";
@@ -852,6 +866,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
         {
             gettimeofday(&start, NULL);
 
+#ifdef CCSP_ALIAS_MGR
             if (aliasMgr != NULL)
             {
                 interNameForNS = CcspAliasMgrGetFirstInternalName(aliasMgr, pInputCmd[0].result[0].pathname);
@@ -860,17 +875,33 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                     pInputCmd[0].result[0].pathname = interNameForNS;
                 }
             }
+#else
+            int relMem = 0;
+            if (alias_mapper_enabled)
+            {
+                interNameForNS = aliasGetInternalName(pInputCmd[0].result[0].pathname, &relMem);
+                //for 'getvalues' cmd, keep the original pathname to get all the internal objects later from lgiAliasGetInternalNames().
+                if (interNameForNS && strncmp(pInputCmd->command, "getvalues", 4))
+                {
+                    pInputCmd[0].result[0].pathname = interNameForNS;
+                }
+            }
+#endif
 
             ret = CcspBaseIf_discComponentSupportingNamespace 
                 (
                  bus_handle,
                  dst_pathname_cr,
-                 pInputCmd[0].result[0].pathname,
+                 interNameForNS ? interNameForNS : pInputCmd[0].result[0].pathname,
                  subsystem_prefix,
                  &ppComponents,
                  &size2
                 );
 
+#ifndef CCSP_ALIAS_MGR
+            if (interNameForNS && !relMem)
+                interNameForNS = NULL;
+#endif
             runSteps = __LINE__;
 
             if ( ret == CCSP_SUCCESS )
@@ -1066,6 +1097,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             {           
                 val[i].parameterName  = AnscCloneString(pInputCmd->result[i].pathname);
 
+#ifdef CCSP_ALIAS_MGR
                 if (aliasMgr != NULL)
                 {
                     internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, val[i].parameterName);
@@ -1078,6 +1110,23 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                       val[i].parameterName = internalNames[i];
                     }
                 }
+#else
+                if (alias_mapper_enabled)
+                {
+                    int relMem = 0;
+                    internalNames[i] = aliasGetInternalName(val[i].parameterName, &relMem);
+                    if (internalNames[i])
+                    {
+                        if (val[i].parameterName)
+                        {
+                            AnscFreeMemory(val[i].parameterName);
+                        }
+                        val[i].parameterName = internalNames[i];
+                        if (!relMem)
+                            internalNames[i] = NULL;
+                    }
+                }
+#endif
 
                 runSteps = __LINE__;
                 rc = strcmp_s("void", strlen("void"), pInputCmd->result[i].val2, &ind);
@@ -1266,6 +1315,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             {
                 valAttr[size].parameterName  = AnscCloneString(pInputCmd->result[size].pathname);
 
+#ifdef CCSP_ALIAS_MGR
                 if (aliasMgr != NULL)
                 {
                     internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, valAttr[size].parameterName);
@@ -1278,6 +1328,23 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                       valAttr[size].parameterName = internalNames[i];
                     }
                 }
+#else
+                if (alias_mapper_enabled)
+                {
+                    int relMem = 0;
+                    internalNames[i] = aliasGetInternalName(valAttr[size].parameterName, &relMem);
+                    if (internalNames[i])
+                    {
+                        if (valAttr[size].parameterName)
+                        {
+                            AnscFreeMemory(valAttr[size].parameterName);
+                        }
+                        valAttr[size].parameterName = internalNames[i];
+                        if (!relMem)
+                            internalNames[i] = NULL;
+                    }
+                }
+#endif
 
                 if ( pInputCmd->result[size].val1 )
                 {
@@ -1410,19 +1477,49 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             i = 0;
             while ( pInputCmd->result[i].pathname )
             {
-                parameterNames[i] = pInputCmd->result[i].pathname;
+                int j = 0, paramCount;
 
+#ifdef CCSP_ALIAS_MGR
+                parameterNames[j] = pInputCmd->result[i].pathname;
                 if (aliasMgr != NULL)
                 {
-                    internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[i]);
-                    if (internalNames[i])
+                    internalNames[j] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[j]);
+                    if (internalNames[j])
                     {
-                      parameterNames[i] = internalNames[i];
+                      parameterNames[j] = internalNames[j];
                     }
                 }
+                paramCount = j + 1;
+#else
+                bool isExternal = false;
+                parameterNames[j] = pInputCmd->result[i].pathname;
+                if (alias_mapper_enabled)
+                {
+                    aliasNames_t *pInternalNames = lgiAliasGetInternalNames(parameterNames[j]);
+                    if (pInternalNames)
+                    {
+                        int idx;
 
-                i++;
-            }
+                        for (idx = 0; idx<pInternalNames->aliasCount && j < BUSCLIENT_MAX_COUNT_SUPPORTED; idx++, j++)
+                        {
+                            internalNames[j] = AnscCloneString(pInternalNames->aliasName[idx]);
+                            parameterNames[j] = internalNames[j];
+                            AnscFreeMemory(pInternalNames->aliasName[idx]);
+                        }
+                        AnscFreeMemory(pInternalNames);
+                        isExternal = true;
+                    }
+                    else
+                    {
+                        j++;
+                    }
+                    paramCount = j;
+                }
+                else
+                {
+                    paramCount = j + 1;
+                }
+#endif
 
             runSteps = __LINE__;
         
@@ -1431,7 +1528,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 dst_componentid,
                 dst_pathname,
                 parameterNames,
-                i,
+                paramCount,
                 &size ,
                 &parameterVal
             );
@@ -1450,41 +1547,61 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             //printf("%d, size:%d.\n", __LINE__,size);
             if(ret == CCSP_SUCCESS  && size >= 1)
             {
-                for ( i = 0; i < size; i++ )
+                int k, index = 1;
+                for ( k = 0; k < size; k++ )
                 {
+#ifndef CCSP_ALIAS_MGR
+                    if (isExternal)
+                    {
+                        char *externalName = (char *) lgiAliasGetExternalName(parameterVal[k]->parameterName);
+                        if (externalName)
+                        {
+                            AnscFreeMemory(parameterVal[k]->parameterName);
+                            parameterVal[k]->parameterName = externalName;
+                        }
+                        unsigned int queryLength = strlen(pInputCmd->result[i].pathname);
+                        unsigned int paramLength = strlen(parameterVal[k]->parameterName);
+                        if ((queryLength > paramLength) ||
+                            (memcmp(pInputCmd->result[i].pathname, parameterVal[k]->parameterName, queryLength) != 0))
+                        {
+                            continue;
+                        }
+                    }
+#endif
                     printf
                         (
                             color_parametername"Parameter %4d name: %s\n"
                             color_parametervalue"               type: %10s,    value: %s \n",
-                            i+1,
-                            parameterVal[i]->parameterName,
-                            (parameterVal[i]->type == ccsp_string)
+                            index,
+                            parameterVal[k]->parameterName,
+                            (parameterVal[k]->type == ccsp_string)
                                 ? "string"
-                                : (parameterVal[i]->type == ccsp_int)
+                                : (parameterVal[k]->type == ccsp_int)
                                     ? "int"
-                                    : (parameterVal[i]->type == ccsp_unsignedInt)
+                                    : (parameterVal[k]->type == ccsp_unsignedInt)
                                         ? "uint"
-                                        : (parameterVal[i]->type == ccsp_boolean)
+                                        : (parameterVal[k]->type == ccsp_boolean)
                                             ? "bool"
-                                            : (parameterVal[i]->type == ccsp_dateTime)
+                                            : (parameterVal[k]->type == ccsp_dateTime)
                                                 ? "dateTime"
-                                                : (parameterVal[i]->type == ccsp_base64)
+                                                : (parameterVal[k]->type == ccsp_base64)
                                                     ? "base64"
-                                                    : (parameterVal[i]->type == ccsp_long)
+                                                    : (parameterVal[k]->type == ccsp_long)
                                                         ? "long"
-                                                        : (parameterVal[i]->type == ccsp_unsignedLong)
+                                                        : (parameterVal[k]->type == ccsp_unsignedLong)
                                                             ? "ulong"
-                                                            : (parameterVal[i]->type == ccsp_float)
+                                                            : (parameterVal[k]->type == ccsp_float)
                                                                 ? "float"
-                                                                : (parameterVal[i]->type == ccsp_double)
+                                                                : (parameterVal[k]->type == ccsp_double)
                                                                     ? "double"
-                                                                    : (parameterVal[i]->type == ccsp_byte)
+                                                                    : (parameterVal[k]->type == ccsp_byte)
                                                                         ? "byte"
-                                                                        : (parameterVal[i]->type == ccsp_none)
+                                                                        : (parameterVal[k]->type == ccsp_none)
                                                                             ? "none"
                                                                             : "unknown",
-                            parameterVal[i]->parameterValue
+                            parameterVal[k]->parameterValue
                         );
+                        index++;
                 }
 
                 runSteps = __LINE__;
@@ -1496,6 +1613,8 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 parameterVal = NULL;
             }
 
+            i++;
+        }
         }
         else if (strcmp(pInputCmd->command, "retv") == 0)
         {
@@ -1504,12 +1623,26 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             int paramCount = 1;
             parameterNames[0] = pInputCmd->result[0].pathname;
 
+#ifdef CCSP_ALIAS_MGR
             if (aliasMgr != NULL)
             {
                 internalNames[0] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[0]);
                 if (internalNames[0])
                     parameterNames[0] = internalNames[0];
             }
+#else
+            if (alias_mapper_enabled)
+            {
+                int relMem = 0;
+                internalNames[0] = aliasGetInternalName(parameterNames[0], &relMem);
+                if (internalNames[0])
+                {
+                    parameterNames[0] = internalNames[0];
+                    if (!relMem)
+                        internalNames[0] = NULL;
+                }
+            }
+#endif
 
             ret = CcspBaseIf_getParameterValues(
                 bus_handle,
@@ -1537,6 +1670,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             {
                 parameterNames[i] = pInputCmd->result[i].pathname;
 
+#ifdef CCSP_ALIAS_MGR
                 if (aliasMgr != NULL)
                 {
                   internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[i]);
@@ -1545,6 +1679,19 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                      parameterNames[i] = internalNames[i];
                   }
                 }
+#else
+                if (alias_mapper_enabled)
+                {
+                    int relMem = 0;
+                    internalNames[i] = aliasGetInternalName(parameterNames[i], &relMem);
+                    if (internalNames[i])
+                    {
+                        parameterNames[i] = internalNames[i];
+                        if (!relMem)
+                            internalNames[i] = NULL;
+                    }
+                }
+#endif
 
                 i++;
             }
@@ -1691,6 +1838,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             {
                 parameterNames[i] = pInputCmd->result[i].pathname;
 
+#ifdef CCSP_ALIAS_MGR
                 if (aliasMgr != NULL)
                 {
                     internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[i]);
@@ -1699,6 +1847,19 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                       parameterNames[i] = internalNames[i];
                     }
                 }
+#else
+                if (alias_mapper_enabled)
+                {
+                    int relMem = 0;
+                    internalNames[i] = aliasGetInternalName(parameterNames[i], &relMem);
+                    if (internalNames[i])
+                    {
+                        parameterNames[i] = internalNames[i];
+                        if (!relMem)
+                            internalNames[i] = NULL;
+                    }
+                }
+#endif
 
                 i++;
             }
@@ -2495,6 +2656,7 @@ int main (int argc, char *argv[])
     //Load AliasManager
     if (is_customer_data_model() && !bInternalParam)
     {
+#ifdef CCSP_ALIAS_MGR
         aliasMgr = CcspAliasMgrInitialize();
 
         if (!CcspAliasMgrLoadMappingFile(aliasMgr, ALIAS_MANAGER_MAPPER_FILE))
@@ -2503,6 +2665,9 @@ int main (int argc, char *argv[])
             CcspAliasMgrFree(aliasMgr);
             aliasMgr = NULL;
         }
+#else
+        alias_mapper_enabled = 1;
+#endif
     }
 
     runSteps = __LINE__;
@@ -2612,10 +2777,12 @@ int main (int argc, char *argv[])
     CCSP_Message_Bus_Exit(bus_handle);
     //printf("count %d %d  \n", count, errcount );
 
+#ifdef CCSP_ALIAS_MGR
     if (aliasMgr)
     {
         CcspAliasMgrFree(aliasMgr);
     }
+#endif
 
     runSteps = __LINE__;
     
