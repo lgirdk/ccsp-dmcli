@@ -2218,16 +2218,18 @@ static void signal_interrupt (int i)
  **************************************************************************/
 static bool is_customer_data_model (void)
 {
+#if 0
     char sysbuf[8];
 
     syscfg_get (NULL, "custom_data_model_enabled", sysbuf, sizeof(sysbuf));
 
-    if (strcmp (sysbuf, "1") == 0)
+    if (strcmp (sysbuf, "0") == 0)
     {
-        return true;
+        return false;
     }
+#endif
 
-    return false;
+    return true;
 }
 
 int main (int argc, char *argv[])
