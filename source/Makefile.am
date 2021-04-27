@@ -28,4 +28,3 @@ bin_PROGRAMS = dmcli
 dmcli_CPPFLAGS =
 dmcli_SOURCES = ccsp_message_bus_client_tool.c
 dmcli_LDFLAGS =  -lccsp_common
-dmcli_LDFLAGS += -lsyscfg
