@@ -582,7 +582,6 @@ int  CCSP_Message_Bus_Send
     DBusMessage *reply;
     int ret = CCSP_Message_Bus_ERROR;
     char * res = 0;
-    errno_t rc = -1;
 
     message = dbus_message_new_method_call (component_id,
                                             path,
@@ -609,14 +608,11 @@ int  CCSP_Message_Bus_Send
                                   DBUS_TYPE_STRING, &res,
                                   DBUS_TYPE_INVALID))
         {
-            *response = AnscAllocateMemory(strlen(res)+1);;
+            size_t len = strlen(res);
+            *response = AnscAllocateMemory(len + 1);
             if(*response)
             {
-                rc = strcpy_s(*response, strlen(res)+1, res);
-                if(rc != EOK)
-                {
-                    RDK_SAFECLIB_ERR("strcpy_s");
-                }
+                memcpy (*response, res, len + 1);
                 ret = CCSP_Message_Bus_OK;
             }
 
