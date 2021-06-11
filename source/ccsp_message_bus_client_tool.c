@@ -232,7 +232,7 @@ _dbus_connection_lock (DBusConnection *connection);
 extern void
 _dbus_connection_unlock (DBusConnection *connection);
 
-
+#if 0
 static const char* msg_path = "/com/cisco/spvtg/ccsp/EVENT" ;
 static const char* msg_interface = "com.cisco.spvtg.ccsp.EVENT" ;
 static const char* msg_method = "__send" ;
@@ -259,7 +259,7 @@ static const char* Introspect_msg = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>
                                     "  </interface>\n"
                                     "</node>\n"
                                     ;
-
+#endif
 
 static RETURN_VALUE_TO_STRING retValueToString[] =
 {
@@ -440,6 +440,7 @@ static void enable_ccsp_exception_handlers (void)
     return;
 }
 
+#if 0
 static DBusHandlerResult
 path_message_func (DBusConnection  *conn,
                    DBusMessage     *message,
@@ -517,8 +518,7 @@ path_message_func (DBusConnection  *conn,
     dbus_message_unref (reply);
     return DBUS_HANDLER_RESULT_HANDLED;
 }
-
-
+#endif
 
 /*
 This is an example with 1 in and 1 out parameter, if you need more parameter, change the message pack/unpack here and  path_message_func.
@@ -583,6 +583,7 @@ unpack:
                 printf("%s\n", str);
 
 */
+#if 0
 static int CCSP_Message_Bus_Send
 (
     void* bus_handle,
@@ -642,7 +643,9 @@ EXIT:
 
     return ret;
 }
+#endif
 
+#if 0
 static int CCSP_Message_Bus_Send_Event
 (
     void* bus_handle,
@@ -697,7 +700,9 @@ static int CCSP_Message_Bus_Send_Event
     dbus_message_unref (message);
     return CCSP_Message_Bus_OK;
 }
+#endif
 
+#if 0
 typedef struct _test_data
 {
     void * bus_handle;
@@ -766,6 +771,7 @@ static void *test_Send_Thread (void *dataptr)
     printf("exit thread \n");
     return 0;
 }
+#endif
 
 //unused function
 #if 0
