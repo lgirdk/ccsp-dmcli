@@ -19,3 +19,7 @@
 SUBDIRS = source
 SUBDIRS += source/MsgBusTestServer
 SUBDIRS += source/MsgBusTestClient
+
+if WITH_GTEST_SUPPORT
+SUBDIRS += source/test
+endif
