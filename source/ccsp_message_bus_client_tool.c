@@ -58,6 +58,10 @@
     #include <asm/sigcontext.h>
 #endif
 
+#ifdef INCLUDE_BREAKPAD
+#include "breakpad_wrapper.h"
+#endif
+
 #ifndef SAFEC_DUMMY_API
 #include "safe_str_lib.h"
 #endif
@@ -109,7 +113,9 @@ RETURN_VALUE_TO_STRING;
 
 static struct param_rtt *rtt_result = NULL;
 static int rtt_ct = 0;
+#ifndef INCLUDE_BREAKPAD
 static char cmdLine[1024]  = {0};
+#endif
 static int runSteps = __LINE__;
 
 static int param_rtt_cmp (const void *c1, const void *c2)
@@ -318,7 +324,7 @@ static int ccsp_type_from_name(char *name, enum dataType_e *type_ptr)
   }
   return 0;
 }
-
+#ifndef INCLUDE_BREAKPAD
 static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
 {
     UNREFERENCED_PARAMETER(context);
@@ -419,6 +425,7 @@ static void enable_ccsp_exception_handlers (void)
 
     return;
 }
+#endif
 
 #if 0
 static DBusHandlerResult
@@ -2092,11 +2099,13 @@ static int analyse_interactive_cmd (char *inputLine, char **args)
     return 1;
 }
 
+#ifndef INCLUDE_BREAKPAD
 static void signal_interrupt (int i)
 {
     UNREFERENCED_PARAMETER(i);
     return;
 }
+#endif
 
 #define  PRINT_HELP(pName)                                                                                              \
             printf(                                                                                                     \
@@ -2169,8 +2178,11 @@ int main (int argc, char *argv[])
         //signal(SIGINT, signal_interrupt);
 
     runSteps = __LINE__;
-
+#ifdef INCLUDE_BREAKPAD
+    breakpad_ExceptionHandler();
+#else
     enable_ccsp_exception_handlers();
+#endif
 
     idx = 1;
 
@@ -2400,9 +2412,9 @@ int main (int argc, char *argv[])
     }
 
     runSteps = __LINE__;
-
+#ifndef INCLUDE_BREAKPAD 
     signal(SIGSEGV, signal_interrupt);
-
+#endif
     // exit     
     CCSP_Message_Bus_Exit(bus_handle);
     //printf("count %d %d  \n", count, errcount );
