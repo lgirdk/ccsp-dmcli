@@ -242,15 +242,15 @@ Usage : \n\
         char *ppDestComponentName = NULL;
         char * ppDestPath = NULL;
 
-        for(tC = 0; tC < nsDiscTestCount; tC++) {
+        for(tC = 0; (unsigned)tC < nsDiscTestCount; tC++) {
             ppDestPath = NULL;
             ppDestComponentName = NULL;
 
             if(discoverComp(bus_handle, "Device.MsgBusTest.ParamString", &ppDestComponentName, &ppDestPath, &discTime)) {
                 nsDiscMetrics.count++;
-                if(discTime < nsDiscMetrics.min)
+                if((unsigned)discTime < nsDiscMetrics.min)
                     nsDiscMetrics.min = discTime;
-                if(discTime > nsDiscMetrics.max)
+                if((unsigned)discTime > nsDiscMetrics.max)
                     nsDiscMetrics.max = discTime;
                 nsDiscMetrics.total += discTime;
 
@@ -277,7 +277,7 @@ Usage : \n\
 
     // Do Get / Set Test
     do {
-        for(sC = tC; sC < setCount; sC++) {
+        for(sC = tC; (unsigned)sC < setCount; sC++) {
             parameterValStruct_t val[5] = {{0}};
             val[0].parameterName = AnscCloneString("Device.MsgBusTest.ParamString");
             val[0].type = ccsp_string;
@@ -310,9 +310,9 @@ Usage : \n\
                 tDiff = timespec_sub(&end, &start);
 
                 sMetrics.count++;
-                if(tDiff < sMetrics.min)
+                if((unsigned)tDiff < sMetrics.min)
                     sMetrics.min = tDiff;
-                if(tDiff > sMetrics.max)
+                if((unsigned)tDiff > sMetrics.max)
                     sMetrics.max = tDiff;
                 sMetrics.total += tDiff;
 
@@ -329,7 +329,7 @@ Usage : \n\
         }
 
         parameterNames[0]="Device.MsgBusTest.ParamString";
-        for(gC = tC; gC < getCount; gC++) {
+        for(gC = tC; (unsigned)gC < getCount; gC++) {
 
             struct timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
@@ -357,9 +357,9 @@ Usage : \n\
                 tDiff = timespec_sub(&end, &start);
 
                 gMetrics.count++;
-                if(tDiff < gMetrics.min)
+                if((unsigned)tDiff < gMetrics.min)
                     gMetrics.min = tDiff;
-                if(tDiff > gMetrics.max)
+                if((unsigned)tDiff > gMetrics.max)
                     gMetrics.max = tDiff;
                 gMetrics.total += tDiff;
 
@@ -379,7 +379,7 @@ Usage : \n\
         }
 
         if(interleaved) {
-            if(tC < getCount) // getCount == seCount
+            if((unsigned)tC < getCount) // getCount == seCount
                 tC++;
             else
                 break;

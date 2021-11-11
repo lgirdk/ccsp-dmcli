@@ -366,7 +366,7 @@ static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
                         "\tTime: %s "
                         "\tProcess name: <%s>\n"
                         "\tPID: %d\n"
-                        "\tFault Address: 0x%08x\n"
+                        "\tFault Address: 0x%08lx\n"
                         "\tSignal: %d \n"
                         "\tSignal Code: %d\n"
                         "\tLast errno: %d:%s \n"
@@ -374,7 +374,7 @@ static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
                         asctime (timeinfo),
                         cmdName, 
                         pid,
-                        (unsigned int)info->si_addr,
+                        (unsigned long int)info->si_addr,
                         sig,
                         info->si_code,
                         errno, strerror(errno),
