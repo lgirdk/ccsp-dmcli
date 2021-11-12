@@ -870,15 +870,14 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 }
             }
 #else
+            int relMem = 0;
             if (alias_mapper_enabled)
             {
-                int relMem = 0;
                 interNameForNS = aliasGetInternalName(pInputCmd[0].result[0].pathname, &relMem);
-                if (interNameForNS)
+                //for 'getvalues' cmd, keep the original pathname to get all the internal objects later from lgiAliasGetInternalNames().
+                if (interNameForNS && strncmp(pInputCmd->command, "getvalues", 4))
                 {
                     pInputCmd[0].result[0].pathname = interNameForNS;
-                    if (!relMem)
-                        interNameForNS = NULL;
                 }
             }
 #endif
@@ -887,12 +886,16 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 (
                  bus_handle,
                  dst_pathname_cr,
-                 pInputCmd[0].result[0].pathname,
+                 interNameForNS ? interNameForNS : pInputCmd[0].result[0].pathname,
                  subsystem_prefix,
                  &ppComponents,
                  &size2
                 );
 
+#ifndef CCSP_ALIAS_MGR
+            if (interNameForNS && !relMem)
+                interNameForNS = NULL;
+#endif
             runSteps = __LINE__;
 
             if ( ret == CCSP_SUCCESS )
@@ -1454,11 +1457,11 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             runSteps = __LINE__;
 
             i = 0;
-            while ( pInputCmd->result[i].pathname )
+            int j = 0;
+            while ( pInputCmd->result[i].pathname && j < BUSCLIENT_MAX_COUNT_SUPPORTED )
             {
-                parameterNames[i] = pInputCmd->result[i].pathname;
-
 #ifdef CCSP_ALIAS_MGR
+                parameterNames[i] = pInputCmd->result[i].pathname;
                 if (aliasMgr != NULL)
                 {
                     internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[i]);
@@ -1468,19 +1471,28 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                     }
                 }
 #else
+                parameterNames[j] = pInputCmd->result[i].pathname;
                 if (alias_mapper_enabled)
                 {
-                    int relMem = 0;
-                    internalNames[i] = aliasGetInternalName(parameterNames[i], &relMem);
-                    if (internalNames[i])
+                    aliasNames_t *pInternalNames = lgiAliasGetInternalNames(parameterNames[j]);
+                    if (pInternalNames)
                     {
-                        parameterNames[i] = internalNames[i];
-                        if (!relMem)
-                            internalNames[i] = NULL;
+                        int idx;
+
+                        for (idx = 0; idx<pInternalNames->aliasCount && j < BUSCLIENT_MAX_COUNT_SUPPORTED; idx++, j++)
+                        {
+                            internalNames[j] = AnscCloneString(pInternalNames->aliasName[idx]);
+                            parameterNames[j] = internalNames[j];
+                            AnscFreeMemory(pInternalNames->aliasName[idx]);
+                        }
+                        AnscFreeMemory(pInternalNames);
+                    }
+                    else
+                    {
+                        j++;
                     }
                 }
 #endif
-
                 i++;
             }
 
@@ -1491,7 +1503,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 dst_componentid,
                 dst_pathname,
                 parameterNames,
-                i,
+                (j>i) ? j : i,
                 &size ,
                 &parameterVal
             );
