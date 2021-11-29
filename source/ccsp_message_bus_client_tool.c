@@ -113,9 +113,6 @@ RETURN_VALUE_TO_STRING;
 
 static struct param_rtt *rtt_result = NULL;
 static int rtt_ct = 0;
-#ifndef INCLUDE_BREAKPAD
-static char cmdLine[1024]  = {0};
-#endif
 static int runSteps = __LINE__;
 
 static int param_rtt_cmp (const void *c1, const void *c2)
@@ -380,7 +377,6 @@ static void ccsp_exception_handler(int sig, siginfo_t *info, void *context)
                         errno, strerror(errno),
                         info->si_errno );
 
-    fprintf( stderr, "\nThe cmd line is :%s.\n", cmdLine );
     fprintf( stderr, "\nThe latest Line number is:%d.\n", runSteps);
     
     /* Output maps information in order to locate crash pointer */
