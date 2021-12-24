@@ -27,4 +27,4 @@ bin_PROGRAMS = MsgBusTestClient
 
 MsgBusTestClient_CPPFLAGS =
 MsgBusTestClient_SOURCES = MsgBusTestClientApp.c
-MsgBusTestClient_LDFLAGS =  -lccsp_common
+MsgBusTestClient_LDFLAGS = -lccsp_common

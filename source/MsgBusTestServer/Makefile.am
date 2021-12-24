@@ -27,6 +27,5 @@ ACLOCAL_AMFLAGS = -I m4
 bin_PROGRAMS = MsgBusTestServer
 
 MsgBusTestServer_CPPFLAGS =
-MsgBusTestServer_SOURCES = ssp_main.c cosa_MsgBusTest_dml.c plugin_main.c ssp_action.c ssp_messagebus_interface.c  dm_pack_datamodel.c 
-MsgBusTestServer_LDFLAGS =  -lccsp_common
-
+MsgBusTestServer_SOURCES = ssp_main.c cosa_MsgBusTest_dml.c plugin_main.c ssp_action.c ssp_messagebus_interface.c dm_pack_datamodel.c
+MsgBusTestServer_LDFLAGS = -lccsp_common
