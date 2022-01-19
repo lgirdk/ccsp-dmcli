@@ -176,7 +176,8 @@ static CCSP_PAIR ccsp_type_table[] = {
   { "float",    ccsp_float },
   { "double",   ccsp_double },
   { "byte",     ccsp_byte },
-  { "none",     ccsp_none}
+  { "none",     ccsp_none},
+  { "hexBinary",ccsp_hexBinary},
 };
 
 typedef struct 
@@ -1578,9 +1579,11 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                                                                     ? "double"
                                                                     : (parameterVal[k]->type == ccsp_byte)
                                                                         ? "byte"
-                                                                        : (parameterVal[k]->type == ccsp_none)
-                                                                            ? "none"
-                                                                            : "unknown",
+                                                                        : (parameterVal[k]->type == ccsp_hexBinary)
+                                                                            ? "hexBinary"
+                                                                            : (parameterVal[k]->type == ccsp_none)
+                                                                                ? "none"
+                                                                                : "unknown",
                             parameterVal[k]->parameterValue
                         );
                         index++;
@@ -1886,9 +1889,11 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                                                                 ? "double"
                                                                 : (psmType == ccsp_byte)
                                                                     ? "byte"
-                                                                    : (psmType == ccsp_none)
-                                                                        ? "none"
-                                                                        : "unknown",
+                                                                    : (psmType == ccsp_hexBinary)
+                                                                        ? "hexBinary"
+                                                                        : (psmType == ccsp_none)
+                                                                            ? "none"
+                                                                            : "unknown",
                         psmValue
                     );
                 AnscFreeMemory(psmValue);
@@ -1967,7 +1972,7 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
     int ind = -1;
     int i = 0;
     int validDataType = 0;
-    char datatype[][9] = {"string","int","uint","dateTime","base64","float","double","bool","byte"};
+    char datatype[][10] = {"string","int","uint","dateTime","base64","float","double","bool","byte","hexBinary"};
 
 	//zqiu: fix crash when *args is NULL
 	if ( *args == NULL )
@@ -2035,7 +2040,7 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
             {
                 goto EXIT1;
             }
-            for(i=0; i<9; i++)
+            for(i=0; i<10; i++)
             {
                  rc =strcmp_s(datatype[i], strlen(datatype[i]), pType, &ind);
                  if(rc != EOK)
