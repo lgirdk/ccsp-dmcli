@@ -51,7 +51,6 @@ int  cmd_dispatch(int  command)
     switch ( command )
     {
         case    'e' :
-#ifdef _ANSC_LINUX
             CcspTraceInfo(("Connect to bus daemon...\n"));
             {
                 char                            CName[256];
@@ -65,7 +64,6 @@ int  cmd_dispatch(int  command)
                 }
                 ssp_Mbi_MessageBusEngage(CName, CCSP_MSG_BUS_CFG, CCSP_COMPONENT_PATH_TESTSERVER);
             }
-#endif
             ssp_create();
             ssp_engage();
             break;
@@ -113,7 +111,6 @@ static void _print_stack_backtrace(void)
 #endif
 }
 
-#if defined(_ANSC_LINUX)
 static void daemonize(void) {
 	switch (fork()) {
 	case 0:
@@ -184,7 +181,6 @@ void sig_handler(int sig)
 
 }
 
-#endif
 
 int main(int argc, char* argv[])
 {
@@ -239,17 +235,6 @@ int main(int argc, char* argv[])
 
     pComponentName = CCSP_COMPONENT_NAME_TESTSERVER;
 
-#if  defined(_ANSC_WINDOWSNT)
-    AnscStartupSocketWrapper(NULL);
-    cmd_dispatch('e');
-
-    while ( cmdChar != 'q' )
-    {
-        cmdChar = getchar();
-
-        cmd_dispatch(cmdChar);
-    }
-#elif defined(_ANSC_LINUX)
     if ( bRunAsDaemon ) 
         daemonize();
 
@@ -297,7 +282,6 @@ int main(int argc, char* argv[])
         }
     }
 
-#endif
 	err = Cdm_Term();
 	if (err != CCSP_SUCCESS)
 	{
