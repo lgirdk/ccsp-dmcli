@@ -1457,20 +1457,23 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             runSteps = __LINE__;
 
             i = 0;
-            int j = 0;
-            while ( pInputCmd->result[i].pathname && j < BUSCLIENT_MAX_COUNT_SUPPORTED )
+            while ( pInputCmd->result[i].pathname )
             {
+                int j = 0, paramCount;
+
 #ifdef CCSP_ALIAS_MGR
-                parameterNames[i] = pInputCmd->result[i].pathname;
+                parameterNames[j] = pInputCmd->result[i].pathname;
                 if (aliasMgr != NULL)
                 {
-                    internalNames[i] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[i]);
-                    if (internalNames[i])
+                    internalNames[j] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[j]);
+                    if (internalNames[j])
                     {
-                      parameterNames[i] = internalNames[i];
+                      parameterNames[j] = internalNames[j];
                     }
                 }
+                paramCount = j + 1;
 #else
+                bool isExternal = false;
                 parameterNames[j] = pInputCmd->result[i].pathname;
                 if (alias_mapper_enabled)
                 {
@@ -1486,15 +1489,19 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                             AnscFreeMemory(pInternalNames->aliasName[idx]);
                         }
                         AnscFreeMemory(pInternalNames);
+                        isExternal = true;
                     }
                     else
                     {
                         j++;
                     }
+                    paramCount = j;
+                }
+                else
+                {
+                    paramCount = j + 1;
                 }
 #endif
-                i++;
-            }
 
             runSteps = __LINE__;
         
@@ -1503,7 +1510,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 dst_componentid,
                 dst_pathname,
                 parameterNames,
-                (j>i) ? j : i,
+                paramCount,
                 &size ,
                 &parameterVal
             );
@@ -1522,41 +1529,61 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             //printf("%d, size:%d.\n", __LINE__,size);
             if(ret == CCSP_SUCCESS  && size >= 1)
             {
-                for ( i = 0; i < size; i++ )
+                int k, index = 1;
+                for ( k = 0; k < size; k++ )
                 {
+#ifndef CCSP_ALIAS_MGR
+                    if (isExternal)
+                    {
+                        char *externalName = (char *) lgiAliasGetExternalName(parameterVal[k]->parameterName);
+                        if (externalName)
+                        {
+                            AnscFreeMemory(parameterVal[k]->parameterName);
+                            parameterVal[k]->parameterName = externalName;
+                        }
+                        unsigned int queryLength = strlen(pInputCmd->result[i].pathname);
+                        unsigned int paramLength = strlen(parameterVal[k]->parameterName);
+                        if ((queryLength > paramLength) ||
+                            (memcmp(pInputCmd->result[i].pathname, parameterVal[k]->parameterName, queryLength) != 0))
+                        {
+                            continue;
+                        }
+                    }
+#endif
                     printf
                         (
                             color_parametername"Parameter %4d name: %s\n"
                             color_parametervalue"               type: %10s,    value: %s \n",
-                            i+1,
-                            parameterVal[i]->parameterName,
-                            (parameterVal[i]->type == ccsp_string)
+                            index,
+                            parameterVal[k]->parameterName,
+                            (parameterVal[k]->type == ccsp_string)
                                 ? "string"
-                                : (parameterVal[i]->type == ccsp_int)
+                                : (parameterVal[k]->type == ccsp_int)
                                     ? "int"
-                                    : (parameterVal[i]->type == ccsp_unsignedInt)
+                                    : (parameterVal[k]->type == ccsp_unsignedInt)
                                         ? "uint"
-                                        : (parameterVal[i]->type == ccsp_boolean)
+                                        : (parameterVal[k]->type == ccsp_boolean)
                                             ? "bool"
-                                            : (parameterVal[i]->type == ccsp_dateTime)
+                                            : (parameterVal[k]->type == ccsp_dateTime)
                                                 ? "dateTime"
-                                                : (parameterVal[i]->type == ccsp_base64)
+                                                : (parameterVal[k]->type == ccsp_base64)
                                                     ? "base64"
-                                                    : (parameterVal[i]->type == ccsp_long)
+                                                    : (parameterVal[k]->type == ccsp_long)
                                                         ? "long"
-                                                        : (parameterVal[i]->type == ccsp_unsignedLong)
+                                                        : (parameterVal[k]->type == ccsp_unsignedLong)
                                                             ? "ulong"
-                                                            : (parameterVal[i]->type == ccsp_float)
+                                                            : (parameterVal[k]->type == ccsp_float)
                                                                 ? "float"
-                                                                : (parameterVal[i]->type == ccsp_double)
+                                                                : (parameterVal[k]->type == ccsp_double)
                                                                     ? "double"
-                                                                    : (parameterVal[i]->type == ccsp_byte)
+                                                                    : (parameterVal[k]->type == ccsp_byte)
                                                                         ? "byte"
-                                                                        : (parameterVal[i]->type == ccsp_none)
+                                                                        : (parameterVal[k]->type == ccsp_none)
                                                                             ? "none"
                                                                             : "unknown",
-                            parameterVal[i]->parameterValue
+                            parameterVal[k]->parameterValue
                         );
+                        index++;
                 }
 
                 runSteps = __LINE__;
@@ -1568,6 +1595,8 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 parameterVal = NULL;
             }
 
+            i++;
+        }
         }
         else if ( strncmp( pInputCmd->command, "sgetvalues"     , 4 ) == 0 )
         {
