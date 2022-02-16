@@ -1502,8 +1502,12 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                     {
                         j++;
                     }
+                    paramCount = j;
                 }
-                paramCount = j;
+                else
+                {
+                    paramCount = j + 1;
+                }
 #endif
 
             runSteps = __LINE__;
