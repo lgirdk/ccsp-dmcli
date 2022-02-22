@@ -1514,7 +1514,6 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 */
 
                 rtt_result = (struct param_rtt * )AnscAllocateMemory((sizeof(struct param_rtt)*(size+1)));
-                memset(rtt_result, 0, sizeof(struct param_rtt)*(size+1));
                 
                 total_mtime = 0;
                 for ( i = 0; i < size; i++ )
