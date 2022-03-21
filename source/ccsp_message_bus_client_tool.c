@@ -1504,6 +1504,13 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             int paramCount = 1;
             parameterNames[0] = pInputCmd->result[0].pathname;
 
+            if (aliasMgr != NULL)
+            {
+                internalNames[0] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[0]);
+                if (internalNames[0])
+                    parameterNames[0] = internalNames[0];
+            }
+
             ret = CcspBaseIf_getParameterValues(
                 bus_handle,
                 dst_componentid,
