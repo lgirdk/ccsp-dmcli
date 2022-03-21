@@ -200,6 +200,7 @@ static char * help_description[] =
     color_parametername"setvalues"color_parametervalue" pathname type value [pathname type value] ... [commit]",
     color_parametername"setcommit"color_parametervalue,
     color_parametername"getvalues"color_parametervalue" pathname [pathname] ...",
+    color_parametername"retvalue"color_parametervalue" pathname [pathname]",
     color_parametername"sgetvalues"color_parametervalue" pathname [pathname] ...",
     color_parametername"setattributes"color_parametervalue" pathname notify accesslist [pathname notify accesslist ] ...",
     color_parametername"getattributes"color_parametervalue" pathname [pathname] ...",
@@ -213,6 +214,7 @@ static char * help_description[] =
     color_parametername"help"color_parametervalue,
     color_parametername"exit"color_parametervalue,
     "-------------------------------------",
+    "retvalue  : This cmd is used to return the value of parameter only.",
     "sgetvalues: This cmd is used to calculate GPV time.",
     "pathname  : It's a full name or partial name.",
     "type      : It is one of string/int/uint/bool/datetime/base64/float/double/byte.",
@@ -1617,6 +1619,60 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             i++;
         }
         }
+        else if ( strncmp( pInputCmd->command, "retvalue"     , 4 ) == 0 )
+        {
+            runSteps = __LINE__;
+
+            int paramCount = 1;
+            parameterNames[0] = pInputCmd->result[0].pathname;
+#ifdef CCSP_ALIAS_MGR
+            if (aliasMgr != NULL)
+            {
+                internalNames[0] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[0]);
+                if (internalNames[0])
+                    parameterNames[0] = internalNames[0];
+            }
+#else
+            if (alias_mapper_enabled)
+            {
+                int relMem = 0;
+                internalNames[0] = aliasGetInternalName(parameterNames[0], &relMem);
+                if (internalNames[0])
+                {
+                    parameterNames[0] = internalNames[0];
+                    if (!relMem)
+                        internalNames[0] = NULL;
+                }
+            }
+#endif
+            ret = CcspBaseIf_getParameterValues(
+                bus_handle,
+                dst_componentid,
+                dst_pathname,
+                parameterNames,
+                paramCount,
+                &size ,
+                &parameterVal
+            );
+
+            runSteps = __LINE__;
+
+            if(ret == CCSP_SUCCESS  && size > 0)
+            {
+                printf("%s\n", parameterVal[0]->parameterValue);
+            }
+            else
+            {
+                printf("\n");
+            }
+            runSteps = __LINE__;
+
+            free_parameterValStruct_t (bus_handle, size, parameterVal);
+
+            runSteps = __LINE__;
+
+            parameterVal = NULL;
+        }
         else if ( strncmp( pInputCmd->command, "sgetvalues"     , 4 ) == 0 )
         {
             i = 0;
@@ -2100,6 +2156,7 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
     }
     else if ( strncmp( pCmd, "getvalues", 4 ) == 0 
             || strncmp( pCmd, "sgetvalues", 4 ) == 0
+            || strncmp( pCmd, "retvalue", 4 ) == 0
             || strncmp( pCmd, "psmget", 4 ) == 0)
     {
         if ( *(args+1) == NULL )
@@ -2107,6 +2164,10 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
 
         runSteps = __LINE__;
 
+        if (strncmp( pCmd, "retvalue", 4 ) == 0)
+        {
+            bVerbose = FALSE;
+        }
         while ((*++args != NULL) && (index < BUSCLIENT_MAX_COUNT_SUPPORTED))
         {
             pInputCmd->result[index++].pathname = *args;
