@@ -1623,12 +1623,26 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             int paramCount = 1;
             parameterNames[0] = pInputCmd->result[0].pathname;
 
+#ifdef CCSP_ALIAS_MGR
             if (aliasMgr != NULL)
             {
                 internalNames[0] = CcspAliasMgrGetFirstInternalName(aliasMgr, parameterNames[0]);
                 if (internalNames[0])
                     parameterNames[0] = internalNames[0];
             }
+#else
+            if (alias_mapper_enabled)
+            {
+                int relMem = 0;
+                internalNames[0] = aliasGetInternalName(parameterNames[0], &relMem);
+                if (internalNames[0])
+                {
+                    parameterNames[0] = internalNames[0];
+                    if (!relMem)
+                        internalNames[0] = NULL;
+                }
+            }
+#endif
 
             ret = CcspBaseIf_getParameterValues(
                 bus_handle,
