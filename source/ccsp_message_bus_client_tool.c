@@ -179,6 +179,7 @@ static char * help_description[] =
     color_parametername"setvalues"color_parametervalue" pathname type value [pathname type value] ... [commit]",
     color_parametername"setcommit"color_parametervalue,
     color_parametername"getvalues"color_parametervalue" pathname [pathname] ...",
+    color_parametername"retv"color_parametervalue" pathname [pathname]",
     color_parametername"sgetvalues"color_parametervalue" pathname [pathname] ...",
     color_parametername"setattributes"color_parametervalue" pathname notify accesslist [pathname notify accesslist ] ...",
     color_parametername"getattributes"color_parametervalue" pathname [pathname] ...",
@@ -192,6 +193,7 @@ static char * help_description[] =
     color_parametername"help"color_parametervalue,
     color_parametername"exit"color_parametervalue,
     "-------------------------------------",
+    "retv      : This cmd is used to return the value of parameter only.",
     "sgetvalues: This cmd is used to calculate GPV time.",
     "pathname  : It's a full name or partial name.",
     "type      : It is one of string/int/uint/bool/datetime/base64/float/double/byte.",
@@ -1441,6 +1443,31 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             }
 
         }
+        else if (strcmp(pInputCmd->command, "retv") == 0)
+        {
+            runSteps = __LINE__;
+
+            int paramCount = 1;
+            parameterNames[0] = pInputCmd->result[0].pathname;
+
+            ret = CcspBaseIf_getParameterValues(
+                bus_handle,
+                dst_componentid,
+                dst_pathname,
+                parameterNames,
+                paramCount,
+                &size,
+                &parameterVal
+            );
+
+            runSteps = __LINE__;
+
+            printf("%s\n", ((ret == CCSP_SUCCESS) && (size > 0)) ? parameterVal[0]->parameterValue : "");
+
+            free_parameterValStruct_t (bus_handle, size, parameterVal);
+
+            parameterVal = NULL;
+        }
         else if ( strncmp( pInputCmd->command, "sgetvalues"     , 4 ) == 0 )
         {
             i = 0;
@@ -1859,12 +1886,18 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
     }
     else if ( strncmp( pCmd, "getvalues", 4 ) == 0 
             || strncmp( pCmd, "sgetvalues", 4 ) == 0
+            || strcmp( pCmd, "retv") == 0
             || strncmp( pCmd, "psmget", 4 ) == 0)
     {
         if ( *(args+1) == NULL )
             goto EXIT1;
 
         runSteps = __LINE__;
+
+        if (strcmp(pCmd, "retv") == 0)
+        {
+            bVerbose = FALSE;
+        }
 
         while ((*++args != NULL) && (index < BUSCLIENT_MAX_COUNT_SUPPORTED))
         {
