@@ -19,7 +19,6 @@
 AM_CFLAGS = -D_ANSC_LINUX
 AM_CFLAGS += -D_ANSC_USER
 AM_CFLAGS += -D_ANSC_LITTLE_ENDIAN_
-AM_CFLAGS += -DCCSP_INC_no_asm_sigcontext_h
 AM_CFLAGS += -I$(top_srcdir)/source/MsgBusTestServer
 
 ACLOCAL_AMFLAGS = -I m4

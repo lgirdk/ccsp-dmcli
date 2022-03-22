@@ -54,12 +54,6 @@
 #include <getopt.h>
 #include <ansc_platform.h>
 
-// for PC build with gcc 4.4.3 on Ubuntu 10.4 Lucid,
-// <asm/sigcontext.h> will redefine some definitions from <bits/sigcontext.h>
-#if !defined(CCSP_INC_no_asm_sigcontext_h)
-    #include <asm/sigcontext.h>
-#endif
-
 #define  COMPONENT_ID_TESTSERVER "eRT.com.cisco.spvtg.ccsp.testserver"
 #define  COMPONENT_PATH_TESTSERVER "/com/cisco/spvtg/ccsp/testserver"
 
