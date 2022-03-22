@@ -52,12 +52,6 @@
 // TELEMETRY 2.0 //RDKB-25996
 #include <telemetry_busmessage_sender.h>
 
-// for PC build with gcc 4.4.3 on Ubuntu 10.4 Lucid,
-// <asm/sigcontext.h> will redefine some definitions from <bits/sigcontext.h>
-#if !defined(CCSP_INC_no_asm_sigcontext_h)
-    #include <asm/sigcontext.h>
-#endif
-
 #ifdef INCLUDE_BREAKPAD
 #include "breakpad_wrapper.h"
 #endif
