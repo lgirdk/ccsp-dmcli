@@ -108,6 +108,7 @@ RETURN_VALUE_TO_STRING;
 static struct param_rtt *rtt_result = NULL;
 static int rtt_ct = 0;
 static int runSteps = __LINE__;
+static BOOL bVerbose = TRUE;
 
 static int param_rtt_cmp (const void *c1, const void *c2)
 {
@@ -823,7 +824,10 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
 
     runSteps = __LINE__;
 
-     printf(color_parametername"subsystem_prefix %s\n", subsystem_prefix);
+    if ( bVerbose )
+    {
+        printf(color_parametername"subsystem_prefix %s\n", subsystem_prefix);
+    }
     /* We need look for destination from CR*/
     if ( pInputCmd[0].result[0].pathname )
     {
@@ -858,7 +862,10 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                    */
                 if ( size2 == 0 )
                 {
-			printf(color_error"Can't find destination component.\n"color_end);
+                    if ( bVerbose )
+                    {
+                        printf(color_error"Can't find destination component.\n"color_end);
+                    }
                     return 1;
                 }
             }
@@ -866,11 +873,17 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             {
                if((ret == CCSP_MESSAGE_BUS_NOT_EXIST)||(ret == CCSP_CR_ERR_UNSUPPORTED_NAMESPACE))
                {
-                  printf(color_error"Can't find destination component.\n"color_end);
+                  if ( bVerbose )
+                  {
+                     printf(color_error"Can't find destination component.\n"color_end);
+                  }
                }
                else
                {
-                  printf(color_error"Ccsp msg bus internal error %d \n"color_end,ret);
+                  if ( bVerbose )
+                  {
+                     printf(color_error"Ccsp msg bus internal error %d \n"color_end,ret);
+                  }
 	          if(ret == CCSP_ERR_NOT_CONNECT)
 	          {
 	             t2_event_d("SYS_ERROR_CCSPBus_error190", 1);	
@@ -956,8 +969,11 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
             dst_pathname    = ppComponents[index]->dbusPath;
         }
 
-//        printf(color_parametername"%s from/to component(%s):\n"color_parametervalue, pInputCmd->command, dst_componentid);
-        printf(color_parametername"%s from/to component(%s): %s\n", pInputCmd->command, dst_componentid, pInputCmd->result[0].pathname);
+        if ( bVerbose )
+        {
+//          printf(color_parametername"%s from/to component(%s):\n"color_parametervalue, pInputCmd->command, dst_componentid);
+            printf(color_parametername"%s from/to component(%s): %s\n", pInputCmd->command, dst_componentid, pInputCmd->result[0].pathname);
+        }
 
         runSteps = __LINE__;
 	/* Coverity Issue Fix - CID:110537 : Forward NULL*/
@@ -1675,9 +1691,10 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
 
         }
 
-
-        printf("\n"color_end);
-        
+        if ( bVerbose )
+        {
+            printf("\n"color_end);
+        }
     }
     
     while( size2 && ppComponents)
@@ -2235,9 +2252,6 @@ int main (int argc, char *argv[])
         {
             RDK_SAFECLIB_ERR("strcat_s");
         }
-        
-        printf(color_succeed"CR component name is: %s\n", dst_pathname_cr);
-
     }
 
     idx += 1;
@@ -2267,6 +2281,7 @@ int main (int argc, char *argv[])
     }
     else
     {
+        printf(color_succeed"CR component name is: %s\n", dst_pathname_cr);
         bInteractive = TRUE;
     }
 
@@ -2351,6 +2366,10 @@ int main (int argc, char *argv[])
                     i++;
                 }
                           */
+                if ( bVerbose )
+                {
+                    printf(color_succeed"CR component name is: %s\n", dst_pathname_cr);
+                }
                 apply_cmd(&inputCmd);
             }
             else if ( ret == -1 )
@@ -2412,7 +2431,10 @@ int main (int argc, char *argv[])
 
     runSteps = __LINE__;
     
-    printf(color_end);
+    if ( bVerbose )
+    {
+        printf(color_end);
+    }
     return 1;
 
 }
