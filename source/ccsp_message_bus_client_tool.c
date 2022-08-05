@@ -1731,7 +1731,7 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
     int ind = -1;
     int i = 0;
     int validDataType = 0;
-    char datatype[][9] = {"string","int","uint","dateTime","base64","float","double","bool","byte"};
+    char datatype[][11] = {"string","int","uint","dateTime","base64","float","double","bool","byte","long","ulong"};
 
 	//zqiu: fix crash when *args is NULL
 	if ( *args == NULL )
@@ -1799,7 +1799,7 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
             {
                 goto EXIT1;
             }
-            for(i=0; i<9; i++)
+            for(i=0; i<11; i++)
             {
                  rc =strcmp_s(datatype[i], strlen(datatype[i]), pType, &ind);
                  if(rc != EOK)
