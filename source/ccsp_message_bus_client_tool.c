@@ -1751,7 +1751,11 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
     
         size2--;
     }
-    
+
+    if (ppComponents)
+    {
+        AnscFreeMemory(ppComponents);
+    }
     return 1;
 }
 
