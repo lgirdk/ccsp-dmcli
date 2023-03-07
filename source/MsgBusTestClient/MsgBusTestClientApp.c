@@ -266,6 +266,8 @@ Usage : \n\
         /* Coverity Fix CID:110503 RESOURCE_LEAK */
         free(ppDestComponentName);
         ppDestComponentName = NULL;
+        free(ppDestPath);              //CID:155507
+        ppDestPath = NULL;
         return 0;
     }
 
@@ -317,6 +319,12 @@ Usage : \n\
                 AnscFreeMemory(pFaultParameter);
 
             usleep(timeout_uS);
+            
+            if(nsDiscOnGetSet)  
+             {
+                free(ppDestPath);          //CID:155507
+                ppDestPath = NULL;
+             }
 
             if(interleaved)
                 break;
@@ -364,12 +372,16 @@ Usage : \n\
 
             usleep(timeout_uS);
 
-            if(interleaved)
-            {   /* Coverity Fix CID:110497 RESOURCE_LEAK */
-                free(ppDestPath);
+            
+            if(nsDiscOnGetSet) 
+              { 
+                free(ppDestPath);       //CID:155507  
                 ppDestPath = NULL;
+              }
+   
+            if(interleaved)
                 break;
-            }
+ 
         }
 
         if(interleaved) {

@@ -1568,7 +1568,16 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                             &msize ,
                             &mparameterval
                         );
-                
+                        
+                        if ( ret == CCSP_SUCCESS )                  //CID:72042 
+                        {
+                            printf(color_succeed"Execution succeed.\n");    
+                        }
+                        else
+                        {
+                            printf(color_error"Execution fail(error code:%s(%d)).\n", ccspReturnValueToString(ret),ret);
+                        } 
+ 
                         gettimeofday(&end, NULL);
                         seconds  = end.tv_sec  - start.tv_sec;
                         useconds = end.tv_usec - start.tv_usec;
@@ -1924,14 +1933,8 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
 
         pInputCmd->result[index++].pathname = *++args;
         
-        if ( index == 0 )
-        {
-            goto EXIT1;
-        }
-        else
-        {
-            goto EXIT;
-        }
+        goto EXIT;       //CID:53643  Removed Deadcode
+
     }
     else if ( strncmp( pCmd, "getnames", 4 ) == 0 )
     {
@@ -1955,14 +1958,8 @@ static int analyse_cmd (char **args, PCMD_CONTENT pInputCmd)
             }
         }
 
-        if ( index == 0 )
-        {
-            goto EXIT1;
-        }
-        else
-        {
-            goto EXIT;
-        }
+        goto EXIT;            //CID:53643 Removed dead code
+        
     }
     else if ( strncmp( pCmd, "getattributes", 4 ) == 0 )          
     {
