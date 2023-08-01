@@ -85,9 +85,10 @@ ssp_Mbi_MessageBusEngage
     ANSC_STATUS                 returnStatus       = ANSC_STATUS_SUCCESS;
     CCSP_Base_Func_CB           cb                 = {0};
 
-    if ( ! component_id || ! path )
+    if ( ! component_id || ! path ) // CID 53104 : Dereference after null check (FORWARD_NULL)
     {
         CcspTraceError((" !!! ssp_Mbi_MessageBusEngage: component_id or path is NULL !!!\n"));
+        return ANSC_STATUS_FAILURE;
     }
 
     /* Connect to message bus */
@@ -179,9 +180,7 @@ ssp_Mbi_Initialize
     )
 {
     UNREFERENCED_PARAMETER(user_data);
-    ANSC_STATUS             returnStatus    = ANSC_STATUS_SUCCESS;
-
-    return ( returnStatus == ANSC_STATUS_SUCCESS ) ? 0 : 1;
+    return 0; // CID 56209 : Logically dead code (DEADCODE)
 }
 
 
