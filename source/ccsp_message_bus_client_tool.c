@@ -820,9 +820,9 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
     static char                     PsmComponentPath[MAX_COMP_NAME_OR_ID_LEN]    = {0};
     errno_t rc  = -1;
     int     ind = -1;
-    
-   
-    //CCSP_Msg_SleepInMilliSeconds(500);
+    bool skip_Component_discovery = false;
+
+  //CCSP_Msg_SleepInMilliSeconds(500);
 
     runSteps = __LINE__;
 
@@ -830,13 +830,18 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
     {
         printf(color_parametername"subsystem_prefix %s\n", subsystem_prefix);
     }
+
+    if ((strncmp( pInputCmd->command, "setvalues", 4 ) == 0 ) || (strncmp( pInputCmd->command, "getvalues", 4 ) == 0 ) || (strncmp( pInputCmd->command, "getnames", 4 ) == 0))
+    {
+        skip_Component_discovery = true;
+    }
     /* We need look for destination from CR*/
     if ( pInputCmd[0].result[0].pathname )
     {
 
         runSteps = __LINE__;
-    
-        if (strncmp(pInputCmd->command, "psm", 3) == 0)
+
+      if (strncmp(pInputCmd->command, "psm", 3) == 0 || skip_Component_discovery)
         {
             size2 = 1;
         }
@@ -965,7 +970,7 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
                 dst_pathname    = PsmComponentPath;
             }
         }
-        else
+        else if (ppComponents)
         {
             dst_componentid = ppComponents[index]->componentName;
             dst_pathname    = ppComponents[index]->dbusPath;
@@ -974,12 +979,13 @@ static int apply_cmd(PCMD_CONTENT pInputCmd )
         if ( bVerbose )
         {
 //          printf(color_parametername"%s from/to component(%s):\n"color_parametervalue, pInputCmd->command, dst_componentid);
-            printf(color_parametername"%s from/to component(%s): %s\n", pInputCmd->command, dst_componentid, pInputCmd->result[0].pathname);
+            if (!skip_Component_discovery)
+                printf(color_parametername"%s from/to component(%s): %s\n", pInputCmd->command, dst_componentid, pInputCmd->result[0].pathname);
         }
 
         runSteps = __LINE__;
 	/* Coverity Issue Fix - CID:110537 : Forward NULL*/
-	if(dst_componentid == NULL)
+	if((!skip_Component_discovery) && (dst_componentid == NULL))
 	{
 		printf("%s-%d:Coverity Error occured as Forward NULL in dst_componentid\n",__FUNCTION__,__LINE__);
 		return -1;
