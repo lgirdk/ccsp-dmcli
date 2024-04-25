@@ -206,11 +206,6 @@ static char * help_description[] =
     NULL
 };
 
-extern void
-_dbus_connection_lock (DBusConnection *connection);
-
-extern void
-_dbus_connection_unlock (DBusConnection *connection);
 
 #if 0
 static const char* msg_path = "/com/cisco/spvtg/ccsp/EVENT" ;
